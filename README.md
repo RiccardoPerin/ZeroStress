@@ -1,3 +1,3 @@
-# app1
+# ZeroStress
 
 A new Flutter project.
