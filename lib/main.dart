@@ -1,9 +1,21 @@
+import 'package:ZeroStress/providers/user_provider.dart';
+import 'package:ZeroStress/screens/HomePage.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'screens/LoginPage.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-void main() {
-  runApp(const MyApp());
+void main () async {
+  WidgetsFlutterBinding.ensureInitialized();
+  final userProvider = UserProvider();
+  await userProvider.loadUser(); // Carica i dati prima di far partire l'app
+
+  runApp(
+    ChangeNotifierProvider(
+      create: (context) => userProvider,
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -13,6 +25,8 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     const Color primaryBlue = Color(0xFF8EAFCE);
     const Color accentLavender = Color(0xFFBDB2FF);
+
+    final userProvider = Provider.of<UserProvider>(context);
 
     return MaterialApp(
       title: 'Breathing App',
@@ -40,7 +54,10 @@ class MyApp extends StatelessWidget {
         ),
       ),
 
-      home : Login()
+      home : userProvider.isLoggedIn
+        ? HomePage(userName: userProvider.name)
+        // ? LoginPage()
+        : LoginPage()
     );
   }
 }
