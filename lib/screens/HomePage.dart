@@ -103,9 +103,9 @@ class HomePage extends StatelessWidget {
           actions: [
             IconButton(
               onPressed: () {
-                //Navigator.push(
-                  //context, 
-                  //MaterialPageRoute(builder: (context) => SettingPage(userName: userName)));
+                Navigator.push(
+                  context, 
+                  MaterialPageRoute(builder: (context) => SettingPage()));
               },
               icon: const Icon(Icons.settings_outlined, color: Colors.white, size: 28)
             ),
