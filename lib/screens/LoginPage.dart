@@ -25,39 +25,45 @@ class LoginPage extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.start,
-                children: [
-                  Image.asset(
-                    'assets/logo.png',
-                    height: 100,
-                  ),
-                  const SizedBox(width: 10,),
-                  Text.rich(
-                    TextSpan(
-                      children: [
-                        const TextSpan(
-                          text: 'Zero',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 50,
-                            color: Color(0xFF384242),
-                          )
-                        ),
+              // ECCO LA MODIFICA: FittedBox aggiunto qui
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: [
+                    Image.asset(
+                      'assets/logo.png',
+                      height: 100,
+                    ),
+                    const SizedBox(width: 10,),
+                    Text.rich(
+                      TextSpan(
+                        children: [
+                          const TextSpan(
+                            text: 'Zero',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 50,
+                              color: Color(0xFF384242),
+                            )
+                          ),
 
-                        const TextSpan(
-                          text: 'Stress',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w200,
-                            fontSize: 50,
-                            color: primaryAzure,
+                          const TextSpan(
+                            text: 'Stress',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w200,
+                              fontSize: 50,
+                              color: primaryAzure,
+                            )
                           )
-                        )
-                      ]
-                    )
-                  ),
-                ],
+                        ]
+                      )
+                    ),
+                  ],
+                ),
               ),
+              // FINE MODIFICA
 
               const SizedBox(height: 60),
                   

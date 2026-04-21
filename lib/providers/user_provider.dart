@@ -44,4 +44,45 @@ class UserProvider extends ChangeNotifier {
     }
     return false; // Login fallito
   }
+
+  // funzione per CONTROLLARE e AGGIORNARE nome, peso, altezza su settings
+  Future<bool> updateProfile(String newName, String heightString, String weightString) async {
+    
+    // 1. Pulizia dei dati in ingresso
+    String cleanName = newName.trim(); // Rimuove eventuali spazi vuoti prima e dopo
+    String cleanWeight = weightString.replaceAll(',', '.'); // Previene errori se l'utente usa la virgola
+
+    // Tentiamo di convertire le stringhe in numeri. Se l'utente ha scritto "ciao" o lasciato vuoto, il risultato sarà 'null'
+    int? parsedHeight = int.tryParse(heightString);
+    double? parsedWeight = double.tryParse(cleanWeight);
+
+    // 2. Controlli di Validazione
+    if (cleanName.isEmpty) {
+      return false; // Il nome non può essere vuoto
+    }
+    
+    if (parsedHeight == null || parsedHeight <= 0) {
+      return false; // L'altezza deve essere un numero maggiore di 0
+    }
+    
+    if (parsedWeight == null || parsedWeight <= 0.0) {
+      return false; // Il peso deve essere un numero maggiore di 0
+    }
+
+    // Se arriviamo qui, tutti i controlli sono passati! Aggiorniamo lo stato.
+    _name = cleanName;
+    _height = parsedHeight;
+    _weight = parsedWeight;
+
+    // 4. Salviamo i dati sul dispositivo
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('user_name', _name);
+    await prefs.setString('user_height', _height.toString());
+    await prefs.setString('user_weight', _weight.toString());
+
+    // 5. Avvisiamo l'app per aggiornare le schermate
+    notifyListeners();
+    
+    return true; // Salvataggio riuscito!
+  }
 }
