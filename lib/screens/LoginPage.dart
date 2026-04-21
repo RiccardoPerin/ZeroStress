@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
+import 'HomePage.dart';
+import 'package:provider/provider.dart';
+import '../providers/user_provider.dart';
 
-class Login extends StatelessWidget {
-  Login({Key? key}) : super(key: key);
+class LoginPage extends StatelessWidget {
+  LoginPage({Key? key}) : super(key: key);
 
-  final TextEditingController nameController = TextEditingController();
+  TextEditingController nameController = TextEditingController();
+  TextEditingController heightController = TextEditingController();
+  TextEditingController weightController = TextEditingController();
   final TextEditingController userController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
 
@@ -91,6 +96,45 @@ class Login extends StatelessWidget {
 
               const SizedBox(height: 20),
 
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: heightController,
+                      keyboardType: TextInputType.number,
+                      decoration: InputDecoration(
+                        border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(20.0)
+                        ),
+                        hintText: 'cm',
+                        labelText: 'Height',
+                        prefixIcon: Icon(Icons.height)
+                      ),
+                    ),
+                  ),
+                  
+                  const SizedBox(width: 20),
+
+                  Expanded(
+                    child:TextField(
+                      controller: weightController,
+                      keyboardType: TextInputType.numberWithOptions(decimal: true),
+                      decoration: InputDecoration(
+                        border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(20.0)
+                        ),
+                        hintText: 'Kg',
+                        labelText: 'Weight',
+                        prefixIcon: Icon(Icons.monitor_weight_outlined)
+                      ),
+                    ),
+                  ),
+
+                ],
+              ),
+
+              const SizedBox(height: 20),
+              
               TextField(
                 controller: userController,
                 decoration: InputDecoration(
@@ -124,8 +168,29 @@ class Login extends StatelessWidget {
                 alignment: Alignment.center,
                 child: 
                   ElevatedButton(
-                    onPressed: () {
-                      // Login Logic TODO
+                    onPressed: () async {
+                      final provider = Provider.of<UserProvider>(context, listen: false);
+                      
+                      //Per far si che usi il . al posto della , e possa fare il parse a double
+                      String pesoPulito = weightController.text.replaceAll(',', '.');
+
+                      // Chiamiamo la funzione login del provider
+                      bool success = await provider.login(
+                        userController.text, 
+                        passwordController.text, 
+                        nameController.text,
+                        heightController.text,
+                        pesoPulito
+                      );
+
+                      if (success) {
+                        // Il main si accorge del cambio di stato e mostra la HomePage da solo.
+                      } else {
+                        // Mostra un errore se i dati sono sbagliati
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text("Username o Password errati!")),
+                        );
+                      }
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: primaryAzure,
