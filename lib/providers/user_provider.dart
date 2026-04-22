@@ -25,14 +25,23 @@ class UserProvider extends ChangeNotifier {
   }
 
   // Logica di Login
-  Future<bool> login(String username, String password, String name, String heightString, String weightString) async {
+  Future<String?> login(String username, String password, String name, String heightString, String weightString) async {
+    // 1. Controllo dati Biometrici
+    if (name.trim().isEmpty) return "Your name cannot be empty";
+    
+    int? h = int.tryParse(heightString);
+    if (h == null || h <= 0) return "Invalid height";
+    
+    double? w = double.tryParse(weightString.replaceAll(',', '.'));
+    if (w == null || w <= 0) return "Invalid weight";
+
+    // 2. Controllo Credenziali
     if (username == "admin" && password == "1234") {
       _name = name;
-      _height = int.tryParse(heightString) ?? 0;
-      _weight = double.tryParse(weightString) ?? 0.0;
+      _height = h;
+      _weight = w;
       _isLoggedIn = true;
 
-      // Salva i dati sul dispositivo
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('user_name', name);
       await prefs.setString('user_height', _height.toString());
@@ -40,9 +49,11 @@ class UserProvider extends ChangeNotifier {
       await prefs.setBool('is_logged_in', true);
 
       notifyListeners();
-      return true; // Login riuscito
+      return null; // No errors
+    } 
+    else {
+      return "Wrong Username or Password!";
     }
-    return false; // Login fallito
   }
 
   // funzione per CONTROLLARE e AGGIORNARE nome, peso, altezza su settings

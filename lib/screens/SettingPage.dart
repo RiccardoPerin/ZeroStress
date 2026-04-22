@@ -167,14 +167,18 @@ class _SettingPageState extends State<SettingPage> {
 
                         _buildPersonalInfo(context), 
 
-                        const SizedBox(height: 40),
+                        //const SizedBox(height: 40),
 
-                        _buildSaveButton(context),
+                        
 
                       ]
                     ),
                   ),
                 ),
+                Padding(
+                  padding: const EdgeInsets.all(20.0),
+                  child: _buildSaveButton(context)    
+                )
               ],
             ),
           ),
