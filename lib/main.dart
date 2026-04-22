@@ -55,9 +55,11 @@ class MyApp extends StatelessWidget {
       ),
 
       home : userProvider.isLoggedIn
-        ? HomePage(userName: userProvider.name)
-        //? LoginPage()
+        //? HomePage(userName: userProvider.name)
+         ? LoginPage()
         : LoginPage()
     );
   }
+
+
 }
