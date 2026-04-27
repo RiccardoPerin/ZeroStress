@@ -1,36 +1,29 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/user_provider.dart';
+import 'LoginPage.dart';
 
-class LoginPage extends StatefulWidget {
-  LoginPage({Key? key}) : super(key: key);
-
-  static const Color primaryAzure = Color(0xFF8EAFCE);
-  static const Color focusedAzure = Color(0xFF5B85AA);
-
+class OnBoardingPage extends StatefulWidget {
   @override
-  State<LoginPage> createState() => _LoginPageState();
+  State<OnBoardingPage> createState() => _OnBoardingPageState();
 }
 
-class _LoginPageState extends State<LoginPage> {
-  final TextEditingController userController = TextEditingController();
-  final TextEditingController passwordController = TextEditingController();
+class _OnBoardingPageState extends State<OnBoardingPage> {
+  final TextEditingController nameController = TextEditingController();
+  final TextEditingController heightController = TextEditingController();
+  final TextEditingController weightController = TextEditingController();
 
-  bool _obscurePassword = true;
-
-  // Necessario metodo dispose() per eliminare i controllori dalla memoria post login, altrimenti andrebbero ad occupare spazio
-  // nella RAM per nulla. A memorizzarne i valori ci pensa il provider
   @override
   void dispose() {
-    userController.dispose();
-    passwordController.dispose();
-    super.dispose(); //Flutter pulisce il widget
+    nameController.dispose();
+    heightController.dispose();
+    weightController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF0F4F8),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 50),
@@ -38,20 +31,19 @@ class _LoginPageState extends State<LoginPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _buildLogo(),
-              const SizedBox(height: 60),                  
-              _buildWelcome(),
-              const SizedBox(height: 40),             
-              _buildUsernameField(),
-              const SizedBox(height: 20),
-              _buildPasswordField(),
+              const SizedBox(height: 60),
+              _buildOnBoardingMessage(),
               const SizedBox(height: 40),
-              _buildLoginButton()    
-            ],
-          ),
+              _buildPersonalFields(),
+              const SizedBox(height: 60),
+              _buildEnterButton()
+            ]
+          )
         )
       )
     );
   }
+
 
   Widget _buildLogo() {
     return FittedBox(
@@ -93,13 +85,12 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-
-  Widget _buildWelcome() {
+  Widget _buildOnBoardingMessage() {
     return const Column( // Avvolgi tutto in una Column
       crossAxisAlignment: CrossAxisAlignment.start, // Allinea il testo a sinistra
       children: [
         Text(
-          'Welcome!',
+          'Nice meeting you!',
           style: TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: 32,
@@ -108,7 +99,7 @@ class _LoginPageState extends State<LoginPage> {
         ),
         SizedBox(height: 10),
         Text(
-          'Breathe in, breathe out...',
+          'Insert some information about you...',
           style: TextStyle(
             color: Colors.grey,
             fontSize: 16,
@@ -118,61 +109,75 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  Widget _buildUsernameField() {
-    return TextField(
-      controller: userController,
-      decoration: InputDecoration(
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(20.0)
+  Widget _buildPersonalFields() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        TextField(
+          controller: nameController,
+          decoration: InputDecoration(
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(20.0)
+            ),
+            hintText: 'Enter your name',
+            labelText: 'Name',
+            prefixIcon: Icon(Icons.face_outlined)
+          ),
         ),
-        hintText: 'Enter your username',
-        labelText: 'Username',
-        prefixIcon: Icon(Icons.account_circle_outlined)
-      ),
+
+        const SizedBox(height: 20),
+
+        Row(
+          children: [
+            Expanded(
+              child: TextField(
+                controller: heightController,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(
+                  border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(20.0)
+                  ),
+                  hintText: 'cm',
+                  labelText: 'Height',
+                  prefixIcon: Icon(Icons.height)
+                ),
+              ),
+            ),
+            
+            const SizedBox(width: 20),
+
+            Expanded(
+              child:TextField(
+                controller: weightController,
+                keyboardType: TextInputType.numberWithOptions(decimal: true),
+                decoration: InputDecoration(
+                  border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(20.0)
+                  ),
+                  hintText: 'Kg',
+                  labelText: 'Weight',
+                  prefixIcon: Icon(Icons.monitor_weight_outlined)
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 
-
-  Widget _buildPasswordField() {
-    return TextField(
-      controller: passwordController,
-      obscureText: _obscurePassword,
-      decoration: InputDecoration(
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(20.0)
-        ),
-        hintText: 'Enter your password',
-        labelText: 'Password',
-        prefixIcon: Icon(Icons.lock_outline),
-        
-        //Icona per nascondere/mostrare password
-        suffixIcon: IconButton(
-          onPressed: () {
-            setState(() {
-              _obscurePassword = !_obscurePassword;
-            });
-          }, 
-          icon: Icon(
-            _obscurePassword ? Icons.visibility_off : Icons.visibility,
-            color: Colors.grey
-          )
-        )
-      ),
-    );
-  }
-
-  Widget _buildLoginButton() {
+  Widget _buildEnterButton() {
     return Align(
       alignment: Alignment.center,
       child: 
         ElevatedButton(
           onPressed: () async {
             final provider = Provider.of<UserProvider>(context, listen: false);
-
-            String? errorMessage = await provider.login(
-              userController.text,
-              passwordController.text
-            );
+            String? errorMessage = await provider.completeOnboarding(
+              nameController.text,
+              heightController.text,
+              weightController.text,
+            ); 
 
             if (!context.mounted) return;
 
@@ -183,7 +188,7 @@ class _LoginPageState extends State<LoginPage> {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(errorMessage),
-                  backgroundColor: Colors.redAccent,
+                  backgroundColor: Colors.orangeAccent,
                   behavior: SnackBarBehavior.floating,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                 ),
@@ -200,7 +205,7 @@ class _LoginPageState extends State<LoginPage> {
             )
           ),
           child: const Text(
-            'Login',
+            "Let's start!",
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)
           )
         )

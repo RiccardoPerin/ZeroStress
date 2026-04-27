@@ -1,16 +1,19 @@
+//import 'dart:nativewrappers/_internal/vm/lib/ffi_native_type_patch.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class UserProvider extends ChangeNotifier {
   String _name = "";
-
   bool _isLoggedIn = false;
   int _height = 0;
   double _weight = 0.0;
+  bool _hasDoneOnboarding = false;
+
   String get name => _name;
   int get height => _height;
   double get weight => _weight;
   bool get isLoggedIn => _isLoggedIn;
+  bool get hasDoneOnboarding => _hasDoneOnboarding;
 
   // Funzione per caricare i dati all'avvio dell'app
   Future<void> loadUser() async {
@@ -21,12 +24,13 @@ class UserProvider extends ChangeNotifier {
     _weight = double.tryParse(prefs.getString('user_weight') ?? "0.0") ?? 0.0;
 
     _isLoggedIn = prefs.getBool('is_logged_in') ?? false;
+
+    _hasDoneOnboarding = prefs.getBool('has_done_onboarding') ?? false;
     notifyListeners(); // Avvisa l'app che i dati sono pronti
   }
 
-  // Logica di Login
-  Future<String?> login(String username, String password, String name, String heightString, String weightString) async {
-    // 1. Controllo dati Biometrici
+  // Logica per OnBoarding
+  Future<String?> completeOnboarding(String name, String heightString, String weightString) async {
     if (name.trim().isEmpty) return "Your name cannot be empty";
     
     int? h = int.tryParse(heightString);
@@ -35,19 +39,28 @@ class UserProvider extends ChangeNotifier {
     double? w = double.tryParse(weightString.replaceAll(',', '.'));
     if (w == null || w <= 0) return "Invalid weight";
 
-    // 2. Controllo Credenziali
+    _name = name;
+    _height = h;
+    _weight = w;
+    _hasDoneOnboarding = true;
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('user_name', _name);
+    await prefs.setString('user_height', _height.toString());
+    await prefs.setString('user_weight', _weight.toString());
+    await prefs.setBool('has_done_onboarding', true);
+
+    notifyListeners();
+    return null;
+
+  }
+
+  // Logica di Login
+  Future<String?> login(String username, String password) async {
     if (username == "admin" && password == "1234") {
-      _name = name;
-      _height = h;
-      _weight = w;
       _isLoggedIn = true;
-
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('user_name', name);
-      await prefs.setString('user_height', _height.toString());
-      await prefs.setString('user_weight', _weight.toString());
       await prefs.setBool('is_logged_in', true);
-
       notifyListeners();
       return null; // No errors
     } 
