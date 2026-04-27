@@ -1,11 +1,17 @@
 import 'package:flutter/material.dart';
 import 'SettingPage.dart';
+import 'package:syncfusion_flutter_gauges/gauges.dart';
 
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
   final String userName; // Riceviamo il nome dal Login
 
   const HomePage({Key? key, required this.userName}) : super(key: key);
 
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -14,7 +20,6 @@ class HomePage extends StatelessWidget {
       appBar: _createAppBar(context),
 
       body: Container(
-        // SFONDO CON GRADIENTE
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
@@ -25,10 +30,10 @@ class HomePage extends StatelessWidget {
             ],
           ),
         ),
+        
         child: SafeArea(
           child: Column(
             children: [
-              // CONTENUTO SCROLLABILE (Per far stare tutto lo schizzo)
               Expanded(
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.all(20),
@@ -41,19 +46,19 @@ class HomePage extends StatelessWidget {
                       // TODAY STRESS & RECOVERY (Due box affiancati)
                       Row(
                         children: [
-                          Expanded(child: _buildSmallStatCard("Today Stress", "Medium", Colors.orangeAccent)),
+                          Expanded(child: _buildSmallStatCard("Today Stress", "Medium", Colors.orangeAccent, 30.0)),
                           const SizedBox(width: 15),
-                          Expanded(child: _buildSmallStatCard("Recovery", "High", Colors.greenAccent)),
+                          Expanded(child: _buildSmallStatCard("Recovery", "High", Colors.greenAccent, 30.0)),
                         ],
                       ),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 15),
 
                       // GRAFICO RHR
                       _buildWideChartCard("Resting HR Trend", "RHR +20%"),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 15),
 
                       // BOX CIRCOLARE (Progressi/Anello)
-                      _buildCircularProgressCard("Daily Goal"),
+                      _buildDailyGoalCard("Daily Goal", 20.0, 15.0),
                     ],
                   ),
                 ),
@@ -97,7 +102,7 @@ class HomePage extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.start,
                   children: [
                     Text("Good $greet,", style: TextStyle(color: Colors.white70, fontSize: 20)),
-                    Text(userName.toUpperCase(), style: const TextStyle(color: Colors.white, fontSize: 30, fontWeight: FontWeight.bold)),
+                    Text(widget.userName.toUpperCase(), style: const TextStyle(color: Colors.white, fontSize: 30, fontWeight: FontWeight.bold)),
                   ],
                 ),
           actions: [
@@ -132,21 +137,74 @@ class HomePage extends StatelessWidget {
     );
   }
 
-  Widget _buildSmallStatCard(String title, String value, Color color) {
+  Widget _buildSmallStatCard(String title, String value, Color color, double valPerc) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          )
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(title, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+          const SizedBox(height: 10),
+
+          Center(
+            child: Text(value, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: color.withOpacity(0.8)))
+          ),
+              
           const SizedBox(height: 5),
-          Text(value, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: color.withOpacity(0.8))),
-        ],
-      ),
+
+          Center(
+            child: SizedBox(
+                height: 120,
+                child: SfRadialGauge(
+                  axes: <RadialAxis>[ //Serve per avere il cerchio di progresso
+                          RadialAxis(
+                            minimum: 0,
+                            maximum: 100,
+                            showLabels: false,
+                            showTicks: false,
+                            axisLineStyle: AxisLineStyle(
+                              thickness: 0.2,
+                              cornerStyle: CornerStyle.bothCurve,
+                              color: Color.fromARGB(30, 0, 169, 181),
+                              thicknessUnit: GaugeSizeUnit.factor,
+                            ),
+                            pointers: <GaugePointer>[
+                              RangePointer(
+                                value: valPerc,
+                                cornerStyle: CornerStyle.bothCurve,
+                                width: 0.2,
+                                sizeUnit: GaugeSizeUnit.factor,
+                                color: color.withOpacity(0.8),
+                              )
+                            ],
+                            annotations: <GaugeAnnotation>[
+                              GaugeAnnotation(
+                                positionFactor: 0,
+                                angle: 90,
+                                widget: Text(
+                                  "${valPerc.toStringAsFixed(0)}%",
+                                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: color)
+                                )
+                              )
+                            ]
+                          )
+                        ]
+                ),
+            ),
+          )   
+        ]
+      )
     );
   }
 
@@ -155,7 +213,17 @@ class HomePage extends StatelessWidget {
       width: double.infinity,
       height: 150,
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20)),
+      decoration: BoxDecoration(
+        color: Colors.white, 
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          )
+        ],
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -168,19 +236,100 @@ class HomePage extends StatelessWidget {
     );
   }
 
-  Widget _buildCircularProgressCard(String title) {
+  Widget _buildDailyGoalCard(String title, double timeGoal, double timeDone) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20)),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10), // Padding bilanciato
+      decoration: BoxDecoration(
+        color: Colors.white, 
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          )
+        ],
+      ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        // Centra verticalmente tutti i figli della Row (titolo e gauge)
+        crossAxisAlignment: CrossAxisAlignment.center, 
         children: [
-          Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
-          const SizedBox(
-            height: 50, width: 50,
-            child: CircularProgressIndicator(value: 0.7, strokeWidth: 8, color: Color(0xFF8EAFCE)),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min, // Occupa solo lo spazio necessario
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold, 
+                    fontSize: 20,
+                    color: Color(0xFF384242),
+                  ),
+                ),
+                const Text(
+                  "Daily progress", 
+                  style: TextStyle(color: Colors.grey, fontSize: 12),
+                ),
+              ],
+            ),
           ),
+
+          const SizedBox(width: 10),
+
+          SizedBox(
+            height: 110,
+            width: 110,
+            child: SfRadialGauge(
+              axes: <RadialAxis>[
+                RadialAxis(
+                  minimum: 0,
+                  maximum: timeGoal,
+                  showLabels: false,
+                  showTicks: false,
+                  radiusFactor: 1, 
+                  axisLineStyle: AxisLineStyle(
+                    thickness: 0.15,
+                    cornerStyle: CornerStyle.bothCurve,
+                    color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                    thicknessUnit: GaugeSizeUnit.factor,
+                  ),
+                  pointers: <GaugePointer>[
+                    RangePointer(
+                      value: timeDone,
+                      cornerStyle: CornerStyle.bothCurve,
+                      width: 0.15,
+                      sizeUnit: GaugeSizeUnit.factor,
+                      color: Theme.of(context).colorScheme.primary,
+                    )
+                  ],
+                  annotations: <GaugeAnnotation>[
+                    GaugeAnnotation(
+                      positionFactor: 0,
+                      widget: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            "${timeDone.toStringAsFixed(0)} / ${timeGoal.toStringAsFixed(0)}",
+                            style: TextStyle(
+                              fontSize: 18, 
+                              fontWeight: FontWeight.bold, 
+                              color: Theme.of(context).colorScheme.primary
+                            ),
+                          ),
+                          Text(
+                            "minutes", 
+                            style: TextStyle(fontSize: 12, color: Colors.grey),
+                          ),
+                        ],
+                      ),
+                    )
+                  ]
+                )
+              ]
+            ),
+          ), 
         ],
       ),
     );
@@ -188,12 +337,12 @@ class HomePage extends StatelessWidget {
 
   Widget _buildBottomNav() {
     return Container(
-      margin: const EdgeInsets.all(20),
+      margin: const EdgeInsets.fromLTRB(20, 20, 20, 5),
       padding: const EdgeInsets.symmetric(vertical: 10),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(40),
-        boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 10)],
+        //boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 10)],
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,

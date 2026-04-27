@@ -313,18 +313,22 @@ class _SettingPageState extends State<SettingPage> {
 
           if (success) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
+              SnackBar(
                 content: Text("Profile Updated!"), 
                 backgroundColor: Colors.green,
+                behavior: SnackBarBehavior.floating,
                 duration: Duration(seconds: 2),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
               ),
             );
           } else {
             // Popup di errore (rosso)
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
+              SnackBar(
                 content: Text("Invalid data! Please check that all fields are correct"),
                 backgroundColor: Colors.redAccent,
+                behavior: SnackBarBehavior.floating,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
               ),
             );
           }
