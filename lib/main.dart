@@ -1,5 +1,6 @@
 import 'package:ZeroStress/providers/user_provider.dart';
-import 'package:ZeroStress/screens/HomePage.dart';
+import 'screens/HomePage.dart';
+import 'screens/onBoardingPage.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'screens/LoginPage.dart';
@@ -55,8 +56,9 @@ class MyApp extends StatelessWidget {
       ),
 
       home : userProvider.isLoggedIn
-        //? HomePage(userName: userProvider.name)
-         ? LoginPage()
+        ? (userProvider.hasDoneOnboarding)
+          ? HomePage(userName: userProvider.name)
+          : OnBoardingPage()
         : LoginPage()
     );
   }
