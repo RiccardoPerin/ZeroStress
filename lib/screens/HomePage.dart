@@ -1,6 +1,8 @@
+import 'package:ZeroStress/screens/BreathingSelectionPage.dart';
 import 'package:flutter/material.dart';
 import 'SettingPage.dart';
 import 'package:syncfusion_flutter_gauges/gauges.dart';
+import 'package:fl_chart/fl_chart.dart';
 
 class HomePage extends StatefulWidget {
   final String userName; // Riceviamo il nome dal Login
@@ -46,19 +48,18 @@ class _HomePageState extends State<HomePage> {
                       // TODAY STRESS & RECOVERY (Due box affiancati)
                       Row(
                         children: [
-                          Expanded(child: _buildSmallStatCard("Today Stress", "Medium", Colors.orangeAccent, 30.0)),
+                          Expanded(child: _buildSmallStatCardIncreasingValue("Today Stress", 30.0)),
                           const SizedBox(width: 15),
-                          Expanded(child: _buildSmallStatCard("Recovery", "High", Colors.greenAccent, 30.0)),
+                          Expanded(child: _buildSmallStatCardDecreasingValue("Recovery", 80)),
                         ],
                       ),
                       const SizedBox(height: 15),
 
                       // GRAFICO RHR
-                      _buildWideChartCard("Resting HR Trend", "RHR +20%"),
+                      _buildRHRChartCard("Resting HR Trend"),
                       const SizedBox(height: 15),
 
-                      // BOX CIRCOLARE (Progressi/Anello)
-                      _buildDailyGoalCard("Daily Goal", 20.0, 15.0),
+                      _buildDailyGoalCard("Daily Goal", 20.0, 40.0),
                     ],
                   ),
                 ),
@@ -73,7 +74,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  // --- WIDGETS DI SUPPORTO (Seguendo il tuo schizzo) ---
+
   String _greeting() {
     final hourNow = DateTime.now().hour;
     if (hourNow > 5 && hourNow < 13) {
@@ -137,12 +138,28 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildSmallStatCard(String title, String value, Color color, double valPerc) {
+  //IncreasingValue perchè serve per creare Stress level, per cui il colore 'peggiora' al crescere
+  Widget _buildSmallStatCardIncreasingValue(String title, double valPerc) {
+    Color colorTxt = Colors.greenAccent;
+    String txtVal = '';
+    if (valPerc >= 0 && valPerc <= 20) {
+      colorTxt = Colors.greenAccent;
+      txtVal = 'Low';
+    }
+    else if (valPerc > 20 && valPerc <= 60) {
+      colorTxt = Colors.orangeAccent;
+      txtVal = 'Medium';
+    }
+    else {
+      colorTxt = Colors.redAccent;
+      txtVal = 'High';
+    }
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.black.withOpacity(0.5)),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.1),
@@ -158,7 +175,7 @@ class _HomePageState extends State<HomePage> {
           const SizedBox(height: 10),
 
           Center(
-            child: Text(value, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: color.withOpacity(0.8)))
+            child: Text(txtVal, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: colorTxt.withOpacity(0.8)))
           ),
               
           const SizedBox(height: 5),
@@ -185,7 +202,7 @@ class _HomePageState extends State<HomePage> {
                                 cornerStyle: CornerStyle.bothCurve,
                                 width: 0.2,
                                 sizeUnit: GaugeSizeUnit.factor,
-                                color: color.withOpacity(0.8),
+                                color: colorTxt.withOpacity(0.8),
                               )
                             ],
                             annotations: <GaugeAnnotation>[
@@ -194,7 +211,7 @@ class _HomePageState extends State<HomePage> {
                                 angle: 90,
                                 widget: Text(
                                   "${valPerc.toStringAsFixed(0)}%",
-                                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: color)
+                                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: colorTxt)
                                 )
                               )
                             ]
@@ -208,14 +225,28 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildWideChartCard(String title, String subtitle) {
+  //DecreasingValue perchè serve per creare Recovery level, per cui il colore 'migliora' al crescere
+  Widget _buildSmallStatCardDecreasingValue(String title, double valPerc) {
+    Color colorTxt = Colors.greenAccent;
+    String txtVal = '';
+    if (valPerc >= 0 && valPerc <= 15) {
+      colorTxt = Colors.redAccent;
+      txtVal = 'Low';
+    }
+    else if (valPerc > 15 && valPerc <= 50) {
+      colorTxt = Colors.orangeAccent;
+      txtVal = 'Medium';
+    }
+    else {
+      colorTxt = Colors.greenAccent;
+      txtVal = 'High';
+    }
     return Container(
-      width: double.infinity,
-      height: 150,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white, 
+        color: Colors.white,
         borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.black.withOpacity(0.5)),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.1),
@@ -227,22 +258,222 @@ class _HomePageState extends State<HomePage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
-          Text(subtitle, style: const TextStyle(color: Colors.redAccent, fontSize: 10)),
+          Text(title, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+          const SizedBox(height: 10),
+
+          Center(
+            child: Text(txtVal, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: colorTxt.withOpacity(0.8)))
+          ),
+              
+          const SizedBox(height: 5),
+
+          Center(
+            child: SizedBox(
+                height: 120,
+                child: SfRadialGauge(
+                  axes: <RadialAxis>[ //Serve per avere il cerchio di progresso
+                          RadialAxis(
+                            minimum: 0,
+                            maximum: 100,
+                            showLabels: false,
+                            showTicks: false,
+                            axisLineStyle: AxisLineStyle(
+                              thickness: 0.2,
+                              cornerStyle: CornerStyle.bothCurve,
+                              color: Color.fromARGB(30, 0, 169, 181),
+                              thicknessUnit: GaugeSizeUnit.factor,
+                            ),
+                            pointers: <GaugePointer>[
+                              RangePointer(
+                                value: valPerc,
+                                cornerStyle: CornerStyle.bothCurve,
+                                width: 0.2,
+                                sizeUnit: GaugeSizeUnit.factor,
+                                color: colorTxt.withOpacity(0.8),
+                              )
+                            ],
+                            annotations: <GaugeAnnotation>[
+                              GaugeAnnotation(
+                                positionFactor: 0,
+                                angle: 90,
+                                widget: Text(
+                                  "${valPerc.toStringAsFixed(0)}%",
+                                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: colorTxt)
+                                )
+                              )
+                            ]
+                          )
+                        ]
+                ),
+            ),
+          )   
+        ]
+      )
+    );
+  }
+
+  Widget _buildRHRChart(double rhr) {
+    double threshold = 1.2 * rhr;
+    return SizedBox(
+      height: 110, 
+      child: LineChart(
+        LineChartData(
+          lineTouchData: LineTouchData(
+            touchTooltipData: LineTouchTooltipData(
+              getTooltipColor: (touchedSpot) => Theme.of(context).primaryColor.withOpacity(0.8),
+              getTooltipItems: (List<LineBarSpot> touchedBarSpots) {
+                return touchedBarSpots.map((barSpot) {
+                  return LineTooltipItem(
+                    '${barSpot.y.toInt()} BPM',
+                    const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                  );
+                }).toList();
+              },
+            ),
+            handleBuiltInTouches: true,
+          ),
+
+          extraLinesData: ExtraLinesData(
+            horizontalLines: [
+              HorizontalLine(
+                y: threshold,
+                color: Colors.redAccent.withOpacity(0.8),
+                strokeWidth: 2,
+                dashArray: [10, 5],
+                label: HorizontalLineLabel(
+                  show: true,
+                  alignment: Alignment.topRight,
+                  padding: const EdgeInsets.only(right: 5, bottom: 5),
+                  style: TextStyle(
+                    color: Colors.redAccent.withOpacity(0.8),
+                    fontWeight: FontWeight.bold,
+                    fontSize: 10
+                  ),
+                  labelResolver: (line) => 'RHR + 20%'
+                )
+              )
+            ]
+          ),
+          gridData: FlGridData(
+            show: true,
+            drawHorizontalLine: false,
+            drawVerticalLine: false, // Pulizia: solo linee orizzontali
+            horizontalInterval: 10, 
+            getDrawingHorizontalLine: (value) => const FlLine(
+              color: Colors.grey,
+              strokeWidth: 1,
+            ),
+          ),
+          titlesData: FlTitlesData(
+            show: true,
+            rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            bottomTitles: AxisTitles(
+              sideTitles: SideTitles(
+                showTitles: true,
+                reservedSize: 22,
+                interval: 1,
+                getTitlesWidget: (value, meta) {
+                  // Mostriamo i giorni della settimana abbreviati
+                  const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+                  if (value.toInt() >= 0 && value.toInt() < days.length) {
+                    return SideTitleWidget(
+                      meta: meta,
+                      child: Text(days[value.toInt()], 
+                        style: const TextStyle(color: Colors.grey, fontSize: 10)),
+                    );
+                  }
+                  return const SizedBox();
+                },
+              ),
+            ),
+            leftTitles: AxisTitles(
+              sideTitles: SideTitles(
+                showTitles: true,
+                interval: 10, // Mostra 40, 60, 80 BPM
+                reservedSize: 30,
+                getTitlesWidget: (value, meta) => Text(
+                  value.toInt().toString(),
+                  style: const TextStyle(color: Colors.grey, fontSize: 10),
+                ),
+              ),
+            ),
+          ),
+          borderData: FlBorderData(show: false),
+          // Adattiamo i limiti per il battito cardiaco
+          minX: 0,
+          maxX: 6,  // 7 giorni (0-6)
+          minY: 40, // Minimo BPM
+          maxY: 80, // Massimo BPM
+          lineBarsData: [
+            LineChartBarData(
+              spots: const [
+                FlSpot(0, 50),
+                FlSpot(1, 61),
+                FlSpot(2, 58),
+                FlSpot(3, 63),
+                FlSpot(4, 72), 
+                FlSpot(5, 60),
+                FlSpot(6, 48),
+              ],
+              isCurved: false,
+              color: Theme.of(context).primaryColor,
+              barWidth: 4,
+              isStrokeCapRound: true,
+              dotData: const FlDotData(show: true),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRHRChartCard(String title) {
+    return Container(
+      width: double.infinity,
+      height: 180,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white, 
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.black.withOpacity(0.5)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          )
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title, 
+            style: const TextStyle(
+              fontWeight: FontWeight.bold, 
+              fontSize: 20,
+              color: Color(0xFF384242)
+            )
+          ),
           const Spacer(),
-          const Center(child: Text("📊 Qui andrà il grafico fl_chart", style: TextStyle(color: Colors.grey))),
+          Center(
+            child: _buildRHRChart(50)
+          ),
         ],
       ),
     );
   }
 
   Widget _buildDailyGoalCard(String title, double timeGoal, double timeDone) {
+    bool isOverGoal = timeDone > timeGoal;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10), // Padding bilanciato
       decoration: BoxDecoration(
         color: Colors.white, 
         borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.black.withOpacity(0.5)),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.1),
@@ -288,22 +519,14 @@ class _HomePageState extends State<HomePage> {
                   maximum: timeGoal,
                   showLabels: false,
                   showTicks: false,
+                  startAngle: 270,
+                  endAngle: 270,
                   radiusFactor: 1, 
-                  axisLineStyle: AxisLineStyle(
-                    thickness: 0.15,
-                    cornerStyle: CornerStyle.bothCurve,
-                    color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                  axisLineStyle: const AxisLineStyle(
+                    thickness: 0.2,
+                    cornerStyle: CornerStyle.bothFlat,
                     thicknessUnit: GaugeSizeUnit.factor,
-                  ),
-                  pointers: <GaugePointer>[
-                    RangePointer(
-                      value: timeDone,
-                      cornerStyle: CornerStyle.bothCurve,
-                      width: 0.15,
-                      sizeUnit: GaugeSizeUnit.factor,
-                      color: Theme.of(context).colorScheme.primary,
-                    )
-                  ],
+                  ), 
                   annotations: <GaugeAnnotation>[
                     GaugeAnnotation(
                       positionFactor: 0,
@@ -325,7 +548,37 @@ class _HomePageState extends State<HomePage> {
                         ],
                       ),
                     )
-                  ]
+                  ],
+                  pointers: <GaugePointer>[
+                    RangePointer(
+                      value: isOverGoal ? timeGoal : timeDone, // Si ferma al massimo
+                      width: 0.2,
+                      sizeUnit: GaugeSizeUnit.factor,
+                      color: Theme.of(context).primaryColor,
+                      cornerStyle: CornerStyle.bothFlat,
+                      enableAnimation: true,
+                      animationDuration: 500,
+                      animationType: AnimationType.ease,
+                    ),
+
+                    if (isOverGoal) //Per fare l'overlapping stile Apple
+                      RangePointer(
+                        value: timeDone - timeGoal,
+                        width: 0.2,
+                        sizeUnit: GaugeSizeUnit.factor,
+                        cornerStyle: CornerStyle.bothCurve,
+                        enableAnimation: true,
+                        animationDuration: 4000,
+                        gradient: SweepGradient(
+                          colors: [
+                            //Theme.of(context).colorScheme.primary.withOpacity(0.5), 
+                            Theme.of(context).primaryColor,
+                            Colors.purpleAccent
+                          ],
+                          stops: const [0.0, 1.0],
+                        ),
+                      ),
+                  ],
                 )
               ]
             ),
@@ -350,7 +603,11 @@ class _HomePageState extends State<HomePage> {
           const Icon(Icons.home, color: Color(0xFF8EAFCE), size: 30),
           IconButton(
             icon: const Icon(Icons.air, color: Colors.grey, size: 30),
-            onPressed: () { /* Naviga alla sezione respiro */ },
+            onPressed: () {
+              Navigator.push(
+                  context, 
+                  MaterialPageRoute(builder: (context) => BreathingSelectionPage()));
+            },
           ),
         ],
       ),
