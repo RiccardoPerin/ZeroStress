@@ -14,6 +14,10 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  String infoStress = '';
+  String infoRecovery = '';
+  String infoRHR = '';
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -48,18 +52,18 @@ class _HomePageState extends State<HomePage> {
                       // TODAY STRESS & RECOVERY (Due box affiancati)
                       Row(
                         children: [
-                          Expanded(child: _buildSmallStatCardIncreasingValue("Today Stress", 30.0)),
+                          Expanded(child: _buildSmallStatCardIncreasingValue("Today Stress", 30.0, infoStress)),
                           const SizedBox(width: 15),
-                          Expanded(child: _buildSmallStatCardDecreasingValue("Recovery", 80)),
+                          Expanded(child: _buildSmallStatCardDecreasingValue("Recovery", 80, infoRecovery))
                         ],
                       ),
-                      const SizedBox(height: 15),
+                      const SizedBox(height: 10),
 
                       // GRAFICO RHR
-                      _buildRHRChartCard("Resting HR Trend"),
-                      const SizedBox(height: 15),
+                      _buildRHRChartCard("Resting HR Trend", infoRHR),
+                      const SizedBox(height: 10),
 
-                      _buildDailyGoalCard("Daily Goal", 20.0, 40.0),
+                      _buildDailyGoalCard("Daily Goal", 20.0, 30.0),
                     ],
                   ),
                 ),
@@ -139,7 +143,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   //IncreasingValue perchè serve per creare Stress level, per cui il colore 'peggiora' al crescere
-  Widget _buildSmallStatCardIncreasingValue(String title, double valPerc) {
+  Widget _buildSmallStatCardIncreasingValue(String title, double valPerc, String info) {
     Color colorTxt = Colors.greenAccent;
     String txtVal = '';
     if (valPerc >= 0 && valPerc <= 20) {
@@ -171,8 +175,24 @@ class _HomePageState extends State<HomePage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: const TextStyle(fontSize: 12, color: Colors.grey)),
-          const SizedBox(height: 10),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Text(title, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+              IconButton(
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+                onPressed: () {
+                  // Qui potrai mostrare un dialogo o un messaggio con la stringa 'info'
+                },
+                icon: const Icon(Icons.info_outline),
+                iconSize: 16,
+                visualDensity: VisualDensity.compact,
+                color: Colors.grey,
+              ),
+            ],
+          ),
 
           Center(
             child: Text(txtVal, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: colorTxt.withOpacity(0.8)))
@@ -226,7 +246,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   //DecreasingValue perchè serve per creare Recovery level, per cui il colore 'migliora' al crescere
-  Widget _buildSmallStatCardDecreasingValue(String title, double valPerc) {
+  Widget _buildSmallStatCardDecreasingValue(String title, double valPerc, String info) {
     Color colorTxt = Colors.greenAccent;
     String txtVal = '';
     if (valPerc >= 0 && valPerc <= 15) {
@@ -258,8 +278,24 @@ class _HomePageState extends State<HomePage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: const TextStyle(fontSize: 12, color: Colors.grey)),
-          const SizedBox(height: 10),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Text(title, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+              IconButton(
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+                onPressed: () {
+                  // Qui potrai mostrare un dialogo o un messaggio con la stringa 'info'
+                },
+                icon: const Icon(Icons.info_outline),
+                iconSize: 16,
+                visualDensity: VisualDensity.compact,
+                color: Colors.grey,
+              ),
+            ],
+          ),
 
           Center(
             child: Text(txtVal, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: colorTxt.withOpacity(0.8)))
@@ -315,7 +351,7 @@ class _HomePageState extends State<HomePage> {
   Widget _buildRHRChart(double rhr) {
     double threshold = 1.2 * rhr;
     return SizedBox(
-      height: 110, 
+      height: 130, 
       child: LineChart(
         LineChartData(
           lineTouchData: LineTouchData(
@@ -414,7 +450,7 @@ class _HomePageState extends State<HomePage> {
                 FlSpot(3, 63),
                 FlSpot(4, 72), 
                 FlSpot(5, 60),
-                FlSpot(6, 48),
+                FlSpot(6, 70),
               ],
               isCurved: false,
               color: Theme.of(context).primaryColor,
@@ -428,10 +464,10 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildRHRChartCard(String title) {
+  Widget _buildRHRChartCard(String title, String info) {
     return Container(
       width: double.infinity,
-      height: 180,
+      height: 220,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white, 
@@ -448,14 +484,32 @@ class _HomePageState extends State<HomePage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            title, 
-            style: const TextStyle(
-              fontWeight: FontWeight.bold, 
-              fontSize: 20,
-              color: Color(0xFF384242)
-            )
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Text(
+                title, 
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold, 
+                  fontSize: 18,
+                  color: Color(0xFF384242)
+                )
+              ),
+              IconButton(
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+                onPressed: () {
+                  // Qui potrai mostrare un dialogo o un messaggio con la stringa 'info'
+                },
+                icon: const Icon(Icons.info_outline),
+                iconSize: 16,
+                visualDensity: VisualDensity.compact,
+                color: Colors.grey,
+              ),
+            ],
           ),
+          
           const Spacer(),
           Center(
             child: _buildRHRChart(50)
