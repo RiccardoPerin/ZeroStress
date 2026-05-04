@@ -30,8 +30,6 @@ class MyApp extends StatelessWidget {
     const Color primaryBlue = Color(0xFF8EAFCE);
     const Color accentLavender = Color(0xFFBDB2FF);
 
-    final userProvider = Provider.of<UserProvider>(context);
-
     return MaterialApp(
       title: 'Breathing App',
       debugShowCheckedModeBanner: false,
@@ -57,15 +55,20 @@ class MyApp extends StatelessWidget {
           floatingLabelStyle: const TextStyle(color: primaryBlue)
         ),
       ),
-      //home: BreathingSelectionPage(),
-     home : userProvider.isLoggedIn
-        ? (userProvider.hasDoneOnboarding)
-        ? HomePage(userName: userProvider.name)
-         : OnBoardingPage()
-         : LoginPage()
-      //home: HomePage(userName: userProvider.name),
-      //home: SettingPage(),
-      //home: BreathingExercisePage(),
+
+      home: Consumer<UserProvider>(
+        builder: (context, provider, child) {
+          if (!provider.isLoggedIn) {
+            return LoginPage();
+          }
+          else if (!provider.hasDoneOnboarding) {
+            return OnBoardingPage();
+          }
+          else {
+            return HomePage(userName: provider.name);
+          }
+        }
+      )
     );
   }
 
