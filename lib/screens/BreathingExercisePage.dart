@@ -12,12 +12,13 @@ class BreathingExercisePage extends StatefulWidget {
 class _BreathingExercisePageState extends State<BreathingExercisePage> with TickerProviderStateMixin {
   
   // --- VARIABILI DA IMPORTARE (Inizializzate con valori di default) ---
-  int totalTimeInSeconds = 14; // Timer totale (1 minuto)
+  int totalTimeInSeconds = 13; // Timer totale (1 minuto)
   
   // Fasi della respirazione
-  int inhaleTime = 5; // Secondi inspirazione
-  int holdTime = 2;   // Secondi in cui si trattiene il respiro
-  int exhaleTime = 5; // Secondi espirazione
+  int inhaleTime = 5;  // Secondi inspirazione
+  int hold1Time = 2;   // Secondi in cui si trattiene il respiro (prima volta)
+  int exhaleTime = 5;  // Secondi espirazione
+  int hold2Time = 1;   // Secondi in cui si trattiene il respiro (seconda volta)
 
   // --- STATO DELLA PAGINA ---
   bool isPlaying = false;
@@ -44,7 +45,7 @@ class _BreathingExercisePageState extends State<BreathingExercisePage> with Tick
   void initState() {
     super.initState();
 
-    int totalCycleTime = inhaleTime + holdTime + exhaleTime + holdTime;
+    int totalCycleTime = inhaleTime + hold1Time + exhaleTime + hold2Time;
     
     _breathController = AnimationController(
       vsync: this,
@@ -127,10 +128,11 @@ class _BreathingExercisePageState extends State<BreathingExercisePage> with Tick
   void _startTimer() {
     _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       setState(() {
-        if (totalTimeInSeconds > 0) {
+        if (totalTimeInSeconds > 1) { // non >0 così non ho il secondo di attesa
           totalTimeInSeconds--;
         } else {
-          // IL TEMPO È SCADUTO!
+          // Quando manca solo 1 secondo (che sta per scadere ora), azzeriamo il timer visivo e fermiamo tutto immediatamente.
+          totalTimeInSeconds = 0;
           _timerFinished();
         }
       });
@@ -149,7 +151,7 @@ class _BreathingExercisePageState extends State<BreathingExercisePage> with Tick
       isCountingDown = false;
       _stopBtnController.reset();
 
-      finalBpm = (initialBpm > 50) ? initialBpm - 5 : initialBpm;
+      finalBpm = (initialBpm > 50) ? initialBpm - 5 : initialBpm; // da aggiornare
     });
 
     _showCompletionDialog();
@@ -157,10 +159,6 @@ class _BreathingExercisePageState extends State<BreathingExercisePage> with Tick
 
   //POP-UP DI FINE ESERCIZIO
   void _showCompletionDialog() {
-    int delta = initialBpm - finalBpm;
-    // String deltaText = delta > 0 ? "$delta" : "$delta"; // CAPIRE I SEGNI
-    String deltaText = "$delta";
-
     showDialog(
       context: context,
       barrierDismissible: false, 
@@ -355,14 +353,18 @@ class _BreathingExercisePageState extends State<BreathingExercisePage> with Tick
       builder: (context, child) {
         
         double p = _breathController.value;
-        int totalCycleTime = inhaleTime + holdTime + exhaleTime + holdTime;
+        int totalCycleTime = inhaleTime + hold1Time + exhaleTime + hold2Time;
         
         double inhaleLimit = inhaleTime / totalCycleTime;
-        double hold1Limit = (inhaleTime + holdTime) / totalCycleTime;
-        double exhaleLimit = (inhaleTime + holdTime + exhaleTime) / totalCycleTime;
+        double hold1Limit = (inhaleTime + hold1Time) / totalCycleTime;
+        double exhaleLimit = (inhaleTime + hold1Time + exhaleTime) / totalCycleTime;
 
         String actionText = "READY";
         double actionFontSize = 38.0; 
+
+        // per inserire i secondi nel cerchio
+        double elapsedSeconds = p * totalCycleTime;
+        int secondsLeft = 0;
 
         if (isCountingDown) {
           actionText = "$preStartCountdown";
@@ -371,15 +373,19 @@ class _BreathingExercisePageState extends State<BreathingExercisePage> with Tick
           if (p < inhaleLimit) {
             actionText = "INHALE";
             actionFontSize = 35.0;
+            secondsLeft = (inhaleTime - elapsedSeconds).ceil();
           } else if (p < hold1Limit) {
             actionText = "HOLD";
             actionFontSize = 35.0;
+            secondsLeft = ((inhaleTime + hold1Time) - elapsedSeconds).ceil();
           } else if (p < exhaleLimit) {
             actionText = "EXHALE";
             actionFontSize = 35.0;
+            secondsLeft = ((inhaleTime + hold1Time + exhaleTime) - elapsedSeconds).ceil();
           } else {
             actionText = "HOLD";
             actionFontSize = 35.0;
+            secondsLeft = ((inhaleTime + hold1Time + exhaleTime + hold2Time) - elapsedSeconds).ceil();
           }
         }
 
@@ -394,23 +400,42 @@ class _BreathingExercisePageState extends State<BreathingExercisePage> with Tick
                 painter: _BreathingTrackPainter(
                   progress: p,
                   inhaleTime: inhaleTime,
-                  holdTime: holdTime,
+                  hold1Time: hold1Time,
                   exhaleTime: exhaleTime,
+                  hold2Time: hold2Time,
                   inhaleColor: const Color(0xFF4DD0E1).withOpacity(0.4), 
                   holdColor: const Color(0xFF7986CB).withOpacity(0.4),   
                   exhaleColor: const Color(0xFFBA68C8).withOpacity(0.4), 
                 ),
               ),
 
-              Text(
-                actionText,
-                style: TextStyle(
-                  color: Colors.black, 
-                  fontSize: actionFontSize, 
-                  fontWeight: FontWeight.w500,
-                  letterSpacing: isCountingDown ? 0 : 3, 
-                ),
-              ),
+              Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const SizedBox(height: 3),
+
+                  Text(
+                    actionText,
+                    style: TextStyle(
+                      color: Colors.black, 
+                      fontSize: actionFontSize, 
+                      fontWeight: FontWeight.w500,
+                      letterSpacing: isCountingDown ? 0 : 3, 
+                    ),
+                  ),
+
+                  // SOLO se stiamo facendo l'esercizio (e non nel 3..2..1)
+                  if (isPlaying && !isCountingDown)
+                    Text(
+                      "$secondsLeft",
+                      style: const TextStyle(
+                        color: Colors.black, 
+                        fontSize: 28, 
+                        fontWeight: FontWeight.w300,
+                      ),
+                    ),
+                ]
+              )
             ],
           ),
         );
@@ -509,7 +534,7 @@ class _BreathingExercisePageState extends State<BreathingExercisePage> with Tick
           decoration: BoxDecoration(
             color: const Color(0xFFF5F5F5), 
             borderRadius: BorderRadius.circular(30),
-            border: Border.all(color: Colors.black, width: 2.5), 
+            border: Border.all(color: Colors.black, width: 1.5), 
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -541,8 +566,9 @@ class _BreathingExercisePageState extends State<BreathingExercisePage> with Tick
 class _BreathingTrackPainter extends CustomPainter {
   final double progress;
   final int inhaleTime;
-  final int holdTime;
+  final int hold1Time;
   final int exhaleTime;
+  final int hold2Time;
   
   final Color inhaleColor;
   final Color holdColor;
@@ -551,8 +577,9 @@ class _BreathingTrackPainter extends CustomPainter {
   _BreathingTrackPainter({
     required this.progress,
     required this.inhaleTime,
-    required this.holdTime,
+    required this.hold1Time,
     required this.exhaleTime,
+    required this.hold2Time,
     required this.inhaleColor,
     required this.holdColor,
     required this.exhaleColor,
@@ -560,11 +587,12 @@ class _BreathingTrackPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    int totalTime = inhaleTime + holdTime + exhaleTime + holdTime;
+    int totalTime = inhaleTime + hold1Time + exhaleTime + hold2Time;
     
     double inhaleAngle = (inhaleTime / totalTime) * 2 * pi;
-    double holdAngle = (holdTime / totalTime) * 2 * pi;
+    double hold1Angle = (hold1Time / totalTime) * 2 * pi;
     double exhaleAngle = (exhaleTime / totalTime) * 2 * pi;
+    double hold2Angle = (hold2Time / totalTime) * 2 * pi;
 
     Offset center = Offset(size.width / 2, size.height / 2);
     double radius = size.width / 2 - 12; 
@@ -584,8 +612,8 @@ class _BreathingTrackPainter extends CustomPainter {
 
     // Hold 1
     trackPaint.color = holdColor;
-    canvas.drawArc(rect, startAngle, holdAngle, false, trackPaint);
-    startAngle += holdAngle;
+    canvas.drawArc(rect, startAngle, hold1Angle, false, trackPaint);
+    startAngle += hold1Angle;
 
     // Exhale
     trackPaint.color = exhaleColor;
@@ -594,7 +622,7 @@ class _BreathingTrackPainter extends CustomPainter {
 
     // Hold 2
     trackPaint.color = holdColor;
-    canvas.drawArc(rect, startAngle, holdAngle, false, trackPaint);
+    canvas.drawArc(rect, startAngle, hold2Angle, false, trackPaint);
 
     // Pallina
     double currentAngle = -pi / 2 + (progress * 2 * pi);
