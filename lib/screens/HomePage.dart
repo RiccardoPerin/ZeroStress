@@ -1,6 +1,8 @@
+import 'package:ZeroStress/providers/user_provider.dart';
 import 'package:ZeroStress/screens/BreathingSelectionPage.dart';
 import 'package:flutter/material.dart';
 import 'SettingPage.dart';
+import 'package:provider/provider.dart'; 
 import 'package:syncfusion_flutter_gauges/gauges.dart';
 import 'package:fl_chart/fl_chart.dart';
 
@@ -21,6 +23,8 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    
     return Scaffold(
       extendBodyBehindAppBar: true, //Serve perchè AppBar tiene sfondo solido
       // Build AppBar
@@ -64,7 +68,7 @@ class _HomePageState extends State<HomePage> {
                       _buildRHRChartCard("Resting HR Trend", infoRHR),
                       const SizedBox(height: 10),
 
-                      _buildDailyGoalCard("Daily Goal", 20.0, 30.0),
+                      _buildDailyGoalCard("Daily Goal", userProvider.time.toDouble(), 30.0),
                     ],
                   ),
                 ),

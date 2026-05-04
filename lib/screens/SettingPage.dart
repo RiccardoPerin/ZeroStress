@@ -16,6 +16,8 @@ class _SettingPageState extends State<SettingPage> {
   late TextEditingController weightController;
   late TextEditingController timeController;
   double _currentSliderValue = 5;
+  bool _forcePop = false; //Variabile necessaria per far si che possa tornare indietro dopo premere Save 
+
 
   @override
   void initState() {
@@ -44,8 +46,12 @@ class _SettingPageState extends State<SettingPage> {
     
     String originalHeight = provider.height > 0 ? provider.height.toString() : "";
     String originalWeight = provider.weight > 0 ? provider.weight.toString() : "";
+    double originalTime = provider.time > 0 ? provider.time.toDouble() : 5.0;
 
-    return nameController.text != provider.name || heightController.text != originalHeight || weightController.text != originalWeight;
+    return nameController.text != provider.name || 
+           heightController.text != originalHeight || 
+           weightController.text != originalWeight || 
+           _currentSliderValue != originalTime;
   }
 
   // Funzione di salvataggio per il pop-up
@@ -62,11 +68,22 @@ class _SettingPageState extends State<SettingPage> {
 
     if (success) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Profile Updated!"), backgroundColor: Colors.green, duration: Duration(seconds: 2)),
+        SnackBar(
+          content: Text("Profile Updated!"), 
+          backgroundColor: Colors.green,
+          behavior: SnackBarBehavior.floating,
+          duration: Duration(seconds: 2),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))
+        )
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Invalid data! Please check that all fields are correct"), backgroundColor: Colors.redAccent),
+        SnackBar(
+          content: Text("Invalid data! Please check that all fields are correct"), 
+          backgroundColor: Colors.redAccent,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))
+        )
       );
     }
     return success;
@@ -107,7 +124,10 @@ class _SettingPageState extends State<SettingPage> {
               Navigator.pop(context, false);
               bool saved = await _saveChanges();
               if (saved && mounted) {
-                Navigator.pop(context);
+                setState(() { _forcePop = true; }); // Sblocca
+                WidgetsBinding.instance.addPostFrameCallback((_) { //Dice a flutter di fare questo non appena ha finito cio che sta facendo
+                  if (mounted) Navigator.pop(context);
+                });
               }
             },
             style: ElevatedButton.styleFrom(
@@ -132,7 +152,7 @@ class _SettingPageState extends State<SettingPage> {
   @override
   Widget build(BuildContext context) {
     return PopScope( // popscope per 'bloccare' il tasto indietro
-      canPop: false,
+      canPop: _forcePop || !_hasUnsavedChanges(), //Se _forcePop è vero o se non ci sono modifiche allora può tornare indietro
       onPopInvokedWithResult: (didPop, result) async {
         if (didPop) return; // Se è già uscito, ignora
 
@@ -178,16 +198,14 @@ class _SettingPageState extends State<SettingPage> {
 
                         _buildDangerZone(context)
 
-                        
-
                       ]
                     ),
                   ),
                 ),
-                Padding(
-                  padding: const EdgeInsets.all(20.0),
-                  child: _buildSaveButton(context)    
-                )
+                //Padding(
+                //  padding: const EdgeInsets.all(20.0),
+                //  child: _buildDangerZone(context)    
+                //)
               ],
             ),
           ),
@@ -202,11 +220,12 @@ class _SettingPageState extends State<SettingPage> {
     return AppBar(
       backgroundColor: Colors.transparent,
       elevation: 0,
-      centerTitle: true,
+      centerTitle: false,
       title: const Text("SETTINGS", style: TextStyle(color: Colors.white, fontSize: 30, fontWeight: FontWeight.bold)),
       iconTheme: const IconThemeData(color: Colors.white),
       actions: [
-        _buildSaveButton(context)
+        _buildSaveButton(context),
+        const SizedBox(width: 20)
       ],
     );
   }
@@ -309,65 +328,65 @@ class _SettingPageState extends State<SettingPage> {
   }
 
   Widget _buildTimeInfo(BuildContext context) {
-  return Container(
-    width: double.infinity,
-    padding: const EdgeInsets.all(16),
-    decoration: BoxDecoration(
-      color: Colors.white, 
-      borderRadius: BorderRadius.circular(20),
-      boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 10)]
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Row(
-          children: [
-            Icon(Icons.timer_outlined, color: Colors.blueGrey),
-            SizedBox(width: 8),
-            Text("DAILY TIME GOAL", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-          ],
-        ),
-        const SizedBox(height: 20),
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white, 
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 10)]
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(Icons.timer_outlined, color: Colors.blueGrey),
+              SizedBox(width: 8),
+              Text("DAILY TIME GOAL", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+            ],
+          ),
+          const SizedBox(height: 20),
 
-        // 2. Slider per i minuti
-        Row(
-          children: [
-            Expanded(
-              child: Slider(
-                value: _currentSliderValue,
-                min: 1,
-                max: 60,
-                divisions: 59, // Divide lo slider in step da 1 minuto (1, 2, ..., 10)
-                label: "${_currentSliderValue.toInt()} min",
-                activeColor: Theme.of(context).colorScheme.primary,
-                onChanged: (double value) {
-                  setState(() {
-                    _currentSliderValue = value;
-                  });
-                },
-              ),
-            ),
-            // 3. Mostra il valore numerico a destra
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Text(
-                "${_currentSliderValue.toInt()} min",
-                style: TextStyle(
-                  fontWeight: FontWeight.bold, 
-                  color: Theme.of(context).colorScheme.primary
+          // 2. Slider per i minuti
+          Row(
+            children: [
+              Expanded(
+                child: Slider(
+                  value: _currentSliderValue,
+                  min: 1,
+                  max: 60,
+                  divisions: 59, // Divide lo slider in step da 1 minuto (1, 2, ..., 10)
+                  label: "${_currentSliderValue.toInt()} min",
+                  activeColor: Theme.of(context).colorScheme.primary,
+                  onChanged: (double value) {
+                    setState(() {
+                      _currentSliderValue = value;
+                    });
+                  },
                 ),
               ),
-            ),
-          ],
-        ),
-      ],
-    ),
-  );
-}
+              // 3. Mostra il valore numerico a destra
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  "${_currentSliderValue.toInt()} min",
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold, 
+                    color: Theme.of(context).colorScheme.primary
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
 
   Widget _buildSaveButton(BuildContext context) {
     return Align(
@@ -385,6 +404,8 @@ class _SettingPageState extends State<SettingPage> {
             _currentSliderValue
           );
 
+          //if (context.mounted) return;
+
           if (success) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
@@ -395,7 +416,18 @@ class _SettingPageState extends State<SettingPage> {
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
               ),
             );
-          } else {
+
+            setState(() {
+              _forcePop = true;
+            });
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) Navigator.pop(context);
+            });
+
+            //Navigator.pop(context);
+
+          } 
+          else {
             // Popup di errore (rosso)
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
@@ -408,15 +440,16 @@ class _SettingPageState extends State<SettingPage> {
           }
         },
         style: ElevatedButton.styleFrom(
-          backgroundColor: Theme.of(context).colorScheme.primary,
+          //backgroundColor: Theme.of(context).colorScheme.primary,
+          backgroundColor: Colors.lightGreen,
           foregroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(horizontal: 100, vertical: 18),
-          elevation: 5,
+          padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 10),
+          elevation: 0,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(30),
+            borderRadius: BorderRadius.circular(10),
             side: const BorderSide(
               color: Colors.white, 
-              width: 2.0, 
+              width: 1.5, 
             ),
           )
         ),
@@ -435,32 +468,39 @@ class _SettingPageState extends State<SettingPage> {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.9),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(20),
       ),
-      child: Column(
-        children: [
-          // TASTO LOGOUT
-          ListTile(
-            leading: const Icon(Icons.logout, color: Colors.blueGrey),
-            title: const Text("Logout", style: TextStyle(fontWeight: FontWeight.bold)),
-            onTap: () async {
-              await provider.logout();
-              // Torna alla schermata di Login
-              if (context.mounted) {
-                Navigator.of(context).popUntil((route) => route.isFirst);
-              }
-            },
-          ),
-          const Divider(),
-          // TASTO ELIMINA DATI
-          ListTile(
-            leading: const Icon(Icons.delete_forever, color: Colors.redAccent),
-            title: const Text("Reset All Data", style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)),
-            onTap: () => _showResetConfirmation(context, provider),
-          ),
-        ],
-      ),
+      child: IntrinsicHeight(
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Expanded(
+              child: ListTile(
+                leading: const Icon(Icons.logout, color: Colors.blueGrey),
+                title: const Text("Logout", style: TextStyle(fontWeight: FontWeight.bold)),
+                onTap: () async {
+                  await provider.logout();
+                  // Torna alla schermata di Login
+                  if (context.mounted) {
+                    Navigator.of(context).popUntil((route) => route.isFirst);
+                  }
+                },
+              ),
+            ),
+
+            const VerticalDivider(),
+
+            Expanded(
+              child: ListTile(
+                leading: const Icon(Icons.delete_forever, color: Colors.redAccent),
+                title: const Text("Reset Data", style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)),
+                onTap: () => _showResetConfirmation(context, provider),
+              )
+            ),
+          ],
+        ),
+      )
     );
   }
 
