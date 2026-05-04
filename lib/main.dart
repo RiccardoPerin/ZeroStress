@@ -1,10 +1,13 @@
 import 'package:ZeroStress/providers/user_provider.dart';
+import 'package:ZeroStress/screens/BreathingExercisePage.dart';
+import 'package:ZeroStress/screens/SettingPage.dart';
 import 'screens/HomePage.dart';
 import 'screens/onBoardingPage.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'screens/LoginPage.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'screens/BreathingSelectionPage.dart';
 
 void main () async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -54,12 +57,15 @@ class MyApp extends StatelessWidget {
           floatingLabelStyle: const TextStyle(color: primaryBlue)
         ),
       ),
-
-      home : userProvider.isLoggedIn
-        ? (userProvider.hasDoneOnboarding)
-          ? HomePage(userName: userProvider.name)
-          : OnBoardingPage()
-        : LoginPage()
+      home: BreathingSelectionPage(),
+     // home : userProvider.isLoggedIn
+        //? (userProvider.hasDoneOnboarding)
+        //? HomePage(userName: userProvider.name)
+         //: OnBoardingPage()
+         //: LoginPage()
+      //home: HomePage(userName: userProvider.name),
+      //home: SettingPage(),
+      //home: BreathingExercisePage(),
     );
   }
 
