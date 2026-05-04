@@ -8,12 +8,14 @@ class UserProvider extends ChangeNotifier {
   int _height = 0;
   double _weight = 0.0;
   bool _hasDoneOnboarding = false;
+  int _time = 0;
 
   String get name => _name;
   int get height => _height;
   double get weight => _weight;
   bool get isLoggedIn => _isLoggedIn;
   bool get hasDoneOnboarding => _hasDoneOnboarding;
+  int get time => _time;
 
   // Funzione per caricare i dati all'avvio dell'app
   Future<void> loadUser() async {
@@ -22,7 +24,7 @@ class UserProvider extends ChangeNotifier {
 
     _height = int.tryParse(prefs.getString('user_height') ?? "0") ?? 0;
     _weight = double.tryParse(prefs.getString('user_weight') ?? "0.0") ?? 0.0;
-
+    _time = prefs.getInt('user_time') ?? 0;
     _isLoggedIn = prefs.getBool('is_logged_in') ?? false;
 
     _hasDoneOnboarding = prefs.getBool('has_done_onboarding') ?? false;
@@ -70,7 +72,7 @@ class UserProvider extends ChangeNotifier {
   }
 
   // funzione per CONTROLLARE e AGGIORNARE nome, peso, altezza su settings
-  Future<bool> updateProfile(String newName, String heightString, String weightString) async {
+  Future<bool> updateProfile(String newName, String heightString, String weightString, double sliderValue) async {
     
     // 1. Pulizia dei dati in ingresso
     String cleanName = newName.trim(); // Rimuove eventuali spazi vuoti prima e dopo
@@ -79,6 +81,7 @@ class UserProvider extends ChangeNotifier {
     // Tentiamo di convertire le stringhe in numeri. Se l'utente ha scritto "ciao" o lasciato vuoto, il risultato sarà 'null'
     int? parsedHeight = int.tryParse(heightString);
     double? parsedWeight = double.tryParse(cleanWeight);
+    int? parsedTime = sliderValue.toInt();
 
     // 2. Controlli di Validazione
     if (cleanName.isEmpty) {
@@ -97,16 +100,41 @@ class UserProvider extends ChangeNotifier {
     _name = cleanName;
     _height = parsedHeight;
     _weight = parsedWeight;
+    _time = parsedTime;
 
     // 4. Salviamo i dati sul dispositivo
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('user_name', _name);
     await prefs.setString('user_height', _height.toString());
     await prefs.setString('user_weight', _weight.toString());
+    await prefs.setInt('user_time', _time);
 
     // 5. Avvisiamo l'app per aggiornare le schermate
     notifyListeners();
     
     return true; // Salvataggio riuscito!
+  }
+
+  Future<void> logout() async {
+    _isLoggedIn = false;
+    // Non resettiamo tutto, ma solo lo stato di login se vuoi mantenere i dati
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('is_logged_in', false);
+    notifyListeners();
+  }
+
+  Future<void> resetAllData() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.clear(); // Elimina tutto ciò che è stato salvato in SharedPreferences
+    
+    // Resetta le variabili locali
+    _name = "";
+    _height = 0;
+    _weight = 0.0;
+    _time = 0;
+    _isLoggedIn = false;
+    _hasDoneOnboarding = false;
+    
+    notifyListeners();
   }
 }

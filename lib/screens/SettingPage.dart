@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart'; 
 import '../providers/user_provider.dart';
+import 'LoginPage.dart';
 
 class SettingPage extends StatefulWidget {
   const SettingPage({Key? key}) : super(key: key);
@@ -13,6 +14,8 @@ class _SettingPageState extends State<SettingPage> {
   late TextEditingController nameController;
   late TextEditingController heightController;
   late TextEditingController weightController;
+  late TextEditingController timeController;
+  double _currentSliderValue = 5;
 
   @override
   void initState() {
@@ -22,9 +25,9 @@ class _SettingPageState extends State<SettingPage> {
     final provider = Provider.of<UserProvider>(context, listen: false);
     
     nameController = TextEditingController(text: provider.name);
-    // Evitiamo di mostrare "0" se l'utente non aveva inserito l'altezza prima
     heightController = TextEditingController(text: provider.height > 0 ? provider.height.toString() : "");
     weightController = TextEditingController(text: provider.weight > 0 ? provider.weight.toString() : "");
+    _currentSliderValue = provider.time > 0 ? provider.time.toDouble() : 5.0;
   }
 
   @override
@@ -53,7 +56,8 @@ class _SettingPageState extends State<SettingPage> {
     bool success = await provider.updateProfile(
       nameController.text,
       heightController.text,
-      weightController.text
+      weightController.text,
+      _currentSliderValue
     );
 
     if (success) {
@@ -141,7 +145,6 @@ class _SettingPageState extends State<SettingPage> {
         }
       },
     
-  
       child: Scaffold(
         extendBodyBehindAppBar: true, 
         appBar: _createAppBar(context),
@@ -167,7 +170,13 @@ class _SettingPageState extends State<SettingPage> {
 
                         _buildPersonalInfo(context), 
 
-                        //const SizedBox(height: 40),
+                        const SizedBox(height: 20),
+
+                        _buildTimeInfo(context),
+
+                        const SizedBox(height: 20),
+
+                        _buildDangerZone(context)
 
                         
 
@@ -196,6 +205,9 @@ class _SettingPageState extends State<SettingPage> {
       centerTitle: true,
       title: const Text("SETTINGS", style: TextStyle(color: Colors.white, fontSize: 30, fontWeight: FontWeight.bold)),
       iconTheme: const IconThemeData(color: Colors.white),
+      actions: [
+        _buildSaveButton(context)
+      ],
     );
   }
 
@@ -296,6 +308,67 @@ class _SettingPageState extends State<SettingPage> {
     );
   }
 
+  Widget _buildTimeInfo(BuildContext context) {
+  return Container(
+    width: double.infinity,
+    padding: const EdgeInsets.all(16),
+    decoration: BoxDecoration(
+      color: Colors.white, 
+      borderRadius: BorderRadius.circular(20),
+      boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 10)]
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Row(
+          children: [
+            Icon(Icons.timer_outlined, color: Colors.blueGrey),
+            SizedBox(width: 8),
+            Text("DAILY TIME GOAL", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+          ],
+        ),
+        const SizedBox(height: 20),
+
+        // 2. Slider per i minuti
+        Row(
+          children: [
+            Expanded(
+              child: Slider(
+                value: _currentSliderValue,
+                min: 1,
+                max: 60,
+                divisions: 59, // Divide lo slider in step da 1 minuto (1, 2, ..., 10)
+                label: "${_currentSliderValue.toInt()} min",
+                activeColor: Theme.of(context).colorScheme.primary,
+                onChanged: (double value) {
+                  setState(() {
+                    _currentSliderValue = value;
+                  });
+                },
+              ),
+            ),
+            // 3. Mostra il valore numerico a destra
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Text(
+                "${_currentSliderValue.toInt()} min",
+                style: TextStyle(
+                  fontWeight: FontWeight.bold, 
+                  color: Theme.of(context).colorScheme.primary
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
+    ),
+  );
+}
+
   Widget _buildSaveButton(BuildContext context) {
     return Align(
       alignment: Alignment.center,
@@ -308,7 +381,8 @@ class _SettingPageState extends State<SettingPage> {
           bool success = await provider.updateProfile(
             nameController.text,
             heightController.text,
-            weightController.text
+            weightController.text,
+            _currentSliderValue
           );
 
           if (success) {
@@ -352,5 +426,67 @@ class _SettingPageState extends State<SettingPage> {
         )
       )
     );
+  }
+
+  Widget _buildDangerZone(BuildContext context) {
+    final provider = Provider.of<UserProvider>(context, listen: false);
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.9),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Column(
+        children: [
+          // TASTO LOGOUT
+          ListTile(
+            leading: const Icon(Icons.logout, color: Colors.blueGrey),
+            title: const Text("Logout", style: TextStyle(fontWeight: FontWeight.bold)),
+            onTap: () async {
+              await provider.logout();
+              // Torna alla schermata di Login
+              if (context.mounted) {
+                Navigator.of(context).popUntil((route) => route.isFirst);
+              }
+            },
+          ),
+          const Divider(),
+          // TASTO ELIMINA DATI
+          ListTile(
+            leading: const Icon(Icons.delete_forever, color: Colors.redAccent),
+            title: const Text("Reset All Data", style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)),
+            onTap: () => _showResetConfirmation(context, provider),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Popup di conferma prima di resettare tutto
+  Future<void> _showResetConfirmation(BuildContext context, UserProvider provider) async {
+    bool? confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Are you sure?"),
+        content: const Text("This will permanently delete all your data and reset the app."),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text("Cancel")),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true), 
+            child: const Text("RESET", style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      await provider.resetAllData();
+      if (context.mounted) {
+        // Va indietro fino alla prima (login)
+        Navigator.of(context).popUntil((route) => route.isFirst);
+      }
+    }
   }
 }
