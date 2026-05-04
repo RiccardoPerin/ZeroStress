@@ -57,12 +57,12 @@ class MyApp extends StatelessWidget {
           floatingLabelStyle: const TextStyle(color: primaryBlue)
         ),
       ),
-      home: BreathingSelectionPage(),
-     // home : userProvider.isLoggedIn
-        //? (userProvider.hasDoneOnboarding)
-        //? HomePage(userName: userProvider.name)
-         //: OnBoardingPage()
-         //: LoginPage()
+      //home: BreathingSelectionPage(),
+     home : userProvider.isLoggedIn
+        ? (userProvider.hasDoneOnboarding)
+        ? HomePage(userName: userProvider.name)
+         : OnBoardingPage()
+         : LoginPage()
       //home: HomePage(userName: userProvider.name),
       //home: SettingPage(),
       //home: BreathingExercisePage(),

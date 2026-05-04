@@ -39,8 +39,6 @@ class _BreathingExercisePageState extends State<BreathingExercisePage> with Tick
 
   // --- SEQUENZE DI ANIMAZIONE (Cuore e Ombra) ---
   late Animation<double> _heartScale;
-  late Animation<double> _buttonShadowOpacity;
-  late Animation<double> _buttonShadowSpread;
 
   @override
   void initState() {
@@ -75,18 +73,6 @@ class _BreathingExercisePageState extends State<BreathingExercisePage> with Tick
       TweenSequenceItem(tween: Tween(begin: 1.0, end: 1.3).chain(CurveTween(curve: Curves.easeOut)), weight: 15),
       TweenSequenceItem(tween: Tween(begin: 1.3, end: 1.0).chain(CurveTween(curve: Curves.easeIn)), weight: 15),
       TweenSequenceItem(tween: ConstantTween(1.0), weight: 70), 
-    ]).animate(_heartbeatController);
-
-    _buttonShadowOpacity = TweenSequence<double>([
-      TweenSequenceItem(tween: Tween(begin: 0.0, end: 0.5), weight: 15),
-      TweenSequenceItem(tween: Tween(begin: 0.5, end: 0.0), weight: 15),
-      TweenSequenceItem(tween: ConstantTween(0.0), weight: 70),
-    ]).animate(_heartbeatController);
-
-    _buttonShadowSpread = TweenSequence<double>([
-      TweenSequenceItem(tween: Tween(begin: 0.0, end: 8.0), weight: 15),
-      TweenSequenceItem(tween: Tween(begin: 8.0, end: 0.0), weight: 15),
-      TweenSequenceItem(tween: ConstantTween(0.0), weight: 70),
     ]).animate(_heartbeatController);
   }
 
@@ -262,34 +248,7 @@ class _BreathingExercisePageState extends State<BreathingExercisePage> with Tick
                   ],
                 ),
 
-                const SizedBox(height: 15),
-
-                // DELTA
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(vertical: 15),
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade100,
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: Theme.of(context).colorScheme.primary, width: 4),
-                  ),
-                  child: Column(
-                    children: [
-                      const Text("Delta", style: TextStyle(fontSize: 15, color: Colors.black54)),
-                      const SizedBox(height: 5),
-                      Text(
-                        "$deltaText BPM", 
-                        style: TextStyle(
-                          fontSize: 25, 
-                          fontWeight: FontWeight.bold, 
-                          color: Colors.black
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                
-                const SizedBox(height: 40),
+                const SizedBox(height: 30),
                 
                 // BOTTONE RITORNO ALLA HOME
                 SizedBox(
@@ -551,13 +510,6 @@ class _BreathingExercisePageState extends State<BreathingExercisePage> with Tick
             color: const Color(0xFFF5F5F5), 
             borderRadius: BorderRadius.circular(30),
             border: Border.all(color: Colors.black, width: 2.5), 
-            boxShadow: [
-              BoxShadow(
-                color: Colors.redAccent.withOpacity(_buttonShadowOpacity.value),
-                blurRadius: 4,
-                spreadRadius: _buttonShadowSpread.value,
-              )
-            ],
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,

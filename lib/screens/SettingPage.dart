@@ -193,7 +193,7 @@ class _SettingPageState extends State<SettingPage> {
     return AppBar(
       backgroundColor: Colors.transparent,
       elevation: 0,
-      centerTitle: false,
+      centerTitle: true,
       title: const Text("SETTINGS", style: TextStyle(color: Colors.white, fontSize: 30, fontWeight: FontWeight.bold)),
       iconTheme: const IconThemeData(color: Colors.white),
     );
