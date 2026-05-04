@@ -12,6 +12,7 @@ class _OnBoardingPageState extends State<OnBoardingPage> {
   final TextEditingController nameController = TextEditingController();
   final TextEditingController heightController = TextEditingController();
   final TextEditingController weightController = TextEditingController();
+  double _currentSliderValue = 5.0;
 
   @override
   void dispose() {
@@ -24,6 +25,7 @@ class _OnBoardingPageState extends State<OnBoardingPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      //backgroundColor: Colors.white,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 50),
@@ -35,11 +37,13 @@ class _OnBoardingPageState extends State<OnBoardingPage> {
               _buildOnBoardingMessage(),
               const SizedBox(height: 40),
               _buildPersonalFields(),
+              const SizedBox(height: 20),
+              _buildTimeSelector(),
               const SizedBox(height: 60),
               _buildEnterButton()
             ]
           )
-        )
+        ),
       )
     );
   }
@@ -166,6 +170,66 @@ class _OnBoardingPageState extends State<OnBoardingPage> {
     );
   }
 
+  Widget _buildTimeSelector() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.black.withOpacity(0.5)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(Icons.timer_outlined, color: Colors.blueGrey),
+              SizedBox(width: 8),
+              Text("DAILY TIME GOAL", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+            ],
+          ),
+          const SizedBox(height: 20),
+
+          // 2. Slider per i minuti
+          Row(
+            children: [
+              Expanded(
+                child: Slider(
+                  value: _currentSliderValue,
+                  min: 1,
+                  max: 60,
+                  divisions: 59, // Divide lo slider in step da 1 minuto (1, 2, ..., 10)
+                  label: "${_currentSliderValue.toInt()} min",
+                  activeColor: Theme.of(context).colorScheme.primary,
+                  onChanged: (double value) {
+                    setState(() {
+                      _currentSliderValue = value;
+                    });
+                  },
+                ),
+              ),
+              // 3. Mostra il valore numerico a destra
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  "${_currentSliderValue.toInt()} min",
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold, 
+                    color: Theme.of(context).colorScheme.primary
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildEnterButton() {
     return Align(
       alignment: Alignment.center,
@@ -177,6 +241,7 @@ class _OnBoardingPageState extends State<OnBoardingPage> {
               nameController.text,
               heightController.text,
               weightController.text,
+              _currentSliderValue
             ); 
 
             if (!context.mounted) return;

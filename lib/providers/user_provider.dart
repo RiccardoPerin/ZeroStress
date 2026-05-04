@@ -32,7 +32,7 @@ class UserProvider extends ChangeNotifier {
   }
 
   // Logica per OnBoarding
-  Future<String?> completeOnboarding(String name, String heightString, String weightString) async {
+  Future<String?> completeOnboarding(String name, String heightString, String weightString, double initialTime) async {
     if (name.trim().isEmpty) return "Your name cannot be empty";
     
     int? h = int.tryParse(heightString);
@@ -45,12 +45,14 @@ class UserProvider extends ChangeNotifier {
     _height = h;
     _weight = w;
     _hasDoneOnboarding = true;
+    _time = initialTime.toInt();
 
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('user_name', _name);
     await prefs.setString('user_height', _height.toString());
     await prefs.setString('user_weight', _weight.toString());
     await prefs.setBool('has_done_onboarding', true);
+    await prefs.setInt('user_time', _time);
 
     notifyListeners();
     return null;
