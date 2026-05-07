@@ -6,7 +6,6 @@ class BreathingTechnique {
   final String name;
   final String description;
   final List<int> phases; // durata in secondi per ogni fase
-  final List<String> phaseLabels;
   final IconData icon;
   final Color accentColor;
 
@@ -14,7 +13,6 @@ class BreathingTechnique {
     required this.name,
     required this.description,
     required this.phases,
-    required this.phaseLabels,
     required this.icon,
     required this.accentColor,
   });
@@ -27,35 +25,31 @@ class BreathingSelectionPage extends StatelessWidget {
   final List<BreathingTechnique> techniques = const [
     BreathingTechnique(
       name: '5-2-5',
-      description: 'Inhale 5s · Hold 2s · Exhale 5s\nCalm & Relaxation',
+      description: 'Calm & Relaxation',
       phases: [5, 2, 5],
-      phaseLabels: ['Inhale', 'Hold', 'Exhale'],
       icon: Icons.self_improvement,
       accentColor: Color(0xFF8EAFCE),
     ),
     BreathingTechnique(
       name: '4-7-8',
-      description: 'Inhale 4s · Hold 7s · Exhale 8s\nDeep Sleep & Anxiety Relief',
+      description: 'Deep Sleep & Anxiety Relief',
       phases: [4, 7, 8],
-      phaseLabels: ['Inhale', 'Hold', 'Exhale'],
       icon: Icons.nightlight_round,
       accentColor: Color(0xFFBDB2FF),
     ),
     BreathingTechnique(
       name: '4-4-4-4',
-      description: 'Inhale 4s · Hold 4s · Exhale 4s · Hold 4s\nBox Breathing & Focus',
+      description: 'Box Breathing & Focus',
       phases: [4, 4, 4, 4],
-      phaseLabels: ['Inhale', 'Hold', 'Exhale', 'Hold'],
       icon: Icons.wb_incandescent,
-      accentColor: Color(0xFF8EAFCE),
+      accentColor: Color(0xFFD4A9C7),
     ),
     BreathingTechnique(
       name: '4-8',
-      description: 'Inhale 4s · Exhale 8s\nQuick Stress Relief',
+      description: 'Quick Stress Relief',
       phases: [4, 8],
-      phaseLabels: ['Inhale', 'Exhale'],
       icon: Icons.timer,
-      accentColor: Color(0xFFBDB2FF),
+      accentColor: Color(0xFF6B9FAD)
     ),
   ];
 
@@ -155,6 +149,7 @@ class BreathingSelectionPage extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: Colors.black.withOpacity(0.5)),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.12),
@@ -186,21 +181,22 @@ class BreathingSelectionPage extends StatelessWidget {
               const SizedBox(height: 14),
               // Nome della tecnica (grande)
               Text(
-                technique.name,
+                technique.description,
+                textAlign: TextAlign.center,
                 style: TextStyle(
-                  fontSize: 26,
+                  fontSize: 19,
                   fontWeight: FontWeight.bold,
                   color: technique.accentColor,
-                  letterSpacing: 1.2,
+                  letterSpacing: 1,
                 ),
               ),
               const SizedBox(height: 8),
               // Descrizione
               Text(
-                technique.description,
+                technique.name,
                 textAlign: TextAlign.center,
                 style: const TextStyle(
-                  fontSize: 11,
+                  fontSize: 15,
                   color: Colors.grey,
                   height: 1.4,
                 ),
