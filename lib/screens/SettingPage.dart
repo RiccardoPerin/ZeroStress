@@ -441,15 +441,15 @@ class _SettingPageState extends State<SettingPage> {
         },
         style: ElevatedButton.styleFrom(
           //backgroundColor: Theme.of(context).colorScheme.primary,
-          backgroundColor: Colors.lightGreen,
+          backgroundColor: Colors.transparent,
           foregroundColor: Colors.white,
           padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 10),
           elevation: 0,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(20),
             side: const BorderSide(
               color: Colors.white, 
-              width: 1.5, 
+              width: 2, 
             ),
           )
         ),
