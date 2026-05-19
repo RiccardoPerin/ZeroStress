@@ -1,6 +1,7 @@
 //import 'dart:nativewrappers/_internal/vm/lib/ffi_native_type_patch.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'impact.dart'; // Per la nuova logica di login
 
 class UserProvider extends ChangeNotifier {
   String _name = "";
@@ -59,17 +60,23 @@ class UserProvider extends ChangeNotifier {
 
   }
 
-  // Logica di Login
   Future<String?> login(String username, String password) async {
-    if (username == "admin" && password == "1234") {
-      _isLoggedIn = true;
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool('is_logged_in', true);
-      notifyListeners();
-      return null; // No errors
-    } 
-    else {
-      return "Wrong Username or Password!";
+    try {
+      // Chiamiamo il metodo statico della tua classe Impact
+      int statusCode = await Impact.getTokens(username, password);
+
+      if (statusCode == 200) {
+        // I token sono già stati salvati da impact.dart
+        _isLoggedIn = true;
+        notifyListeners(); // Avvisa la UI di cambiare pagina
+        return null; // Nessun errore
+      } else {
+        // Se lo status code non è 200 (es. 401 Unauthorized)
+        return "Username o password errati!";
+      }
+    } catch (e) {
+      // Se c'è un problema di rete (es. no internet) catch intercetta l'errore
+      return "Errore di connessione al server. Riprova.";
     }
   }
 
