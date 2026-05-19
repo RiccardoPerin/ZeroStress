@@ -575,7 +575,7 @@ class _HomePageState extends State<HomePage> {
               axes: <RadialAxis>[
                 RadialAxis(
                   minimum: 0,
-                  maximum: timeGoal,
+                  maximum: timeGoal > 0 ? timeGoal : 1,
                   showLabels: false,
                   showTicks: false,
                   startAngle: 270,
