@@ -1,13 +1,11 @@
+import 'package:ZeroStress/providers/health_data_provider.dart';
 import 'package:ZeroStress/providers/user_provider.dart';
-import 'package:ZeroStress/screens/BreathingExercisePage.dart';
-import 'package:ZeroStress/screens/SettingPage.dart';
 import 'screens/HomePage.dart';
 import 'screens/onBoardingPage.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'screens/LoginPage.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'screens/BreathingSelectionPage.dart';
 
 void main () async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -15,8 +13,11 @@ void main () async {
   await userProvider.loadUser(); // Carica i dati prima di far partire l'app
 
   runApp(
-    ChangeNotifierProvider(
-      create: (context) => userProvider,
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (context) => userProvider),
+        ChangeNotifierProvider(create: (context) => HealthDataProvider()),
+      ],
       child: const MyApp(),
     ),
   );

@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-
+ 
 class Impact{
   
   static final patient = "Jpefaq6m58"; 
@@ -10,7 +10,7 @@ class Impact{
   static final gateUrl = "gate/v1/";
   static final dataUrl = "data/v1/";
 
-  //Function to get the tokens initially
+
   static Future<int> getTokens(String username, String password) async {
     // 1. create url
     final url = Impact.baseUrl + Impact.gateUrl + 'token/';
@@ -29,7 +29,6 @@ class Impact{
     return response.statusCode; // per verificare che abbia funzionato
   }
 
-  //Function to refresh the tokens when needed
   static Future<int> refreshTokens(String refresh) async {
 
     // 1. create url
@@ -49,8 +48,10 @@ class Impact{
     return response.statusCode; // per verificare che abbia funzionato
   }
 
+  // ─────────────────────────────────────────────────────────────────────────
+  // RICHIESTA AUTENTICATA
+  // ─────────────────────────────────────────────────────────────────────────
 
-  //Function to do the get queries and check if the authentication is okay
   static Future<http.Response> _authenticatedGet(String url) async {
     final formattedUrl = Uri.parse(url);
 
@@ -58,17 +59,17 @@ class Impact{
     String? access = sp.getString("access");
     String? refresh = sp.getString("refresh");
 
-    if (access == null) throw Exception("Not authenticated");
+    if (access == null) throw Exception("Not authenticated"); // controlla che tu sia autenticato, credo si possa togliere...
 
     var response = await http.get(
       formattedUrl,
       headers: {"Authorization": "Bearer $access"},
     );
 
-    // Token scaduto → refresh e riprova
-    if (response.statusCode == 401 && refresh != null) {
+    // se il token di accesso è scaduto MA abbiamo il token di refresh → chiama _refreshTokens e li sovrascrive
+    if (response.statusCode == 401 && refresh != null) { 
       final refreshStatus = await refreshTokens(refresh);
-      if (refreshStatus == 200) { //Se refresh ha funzionato
+      if (refreshStatus == 200) { // → Se refresh ha funzionato (ovvero token 'refresh' non era scaduto) allora esegue la richiesta dei dati
         final newAccess = sp.getString("access")!;
         response = await http.get(
           Uri.parse(url),
@@ -78,47 +79,15 @@ class Impact{
         throw Exception("Session expired. Please login again.");
       }
     }
-    return response;
+    return response; // restituisco tutta la risposta, se la chiamata non ha funzioanto manda l'eccezione e non arriva mai qua
   }
 
+  // ─────────────────────────────────────────────────────────────────────────
+  // RICHIESTE DATI EFFETTIVE
+  // ─────────────────────────────────────────────────────────────────────────
 
-  // Generic function to fetch data daily --> DA SISTEMARE L'IDEA
-  static Future<Map<String, dynamic>?> _fetchDataDay(String endpoint, String date) async {
-    final url = "${Impact.baseUrl}${Impact.dataUrl}$endpoint/patients/${Impact.patient}/day/$date/";
+  // 1. RHR Settimanale
 
-    final response = await _authenticatedGet(url);
-
-    if (response.statusCode == 200) {
-      final responseBody = jsonDecode(response.body);
-      
-      // 1. Entriamo nel primo livello di 'data'
-      final rootData = responseBody['data'];
-      
-      if (rootData != null) {
-        // 2. Estraiamo la data (String)
-        final String extractedDate = rootData['date'];
-        
-        // 3. Entriamo nel secondo livello di 'data' per prendere il 'value' (double)
-        // Usiamo 'as num' e poi '.toDouble()' per evitare crash se il server restituisce un intero (es. 56 invece di 56.39)
-        final double extractedValue = (rootData['data']['value'] as num).toDouble();
-        
-        // 4. Ritorniamo i due dati impacchettati in una mappa
-        return {
-          'date': extractedDate,
-          'value': extractedValue,
-        };
-      }
-      return null;
-    }
-  }
-
-  // Fetch daily data using the generic function --> DA SISTEMARE L'IDEA
-  static Future<Map<String, dynamic>?> getHeartRate(String date) => _fetchDataDay('heart_rate', date);
-  static Future<Map<String,dynamic>?> getRestingHeartRate(String date) => _fetchDataDay('resting_heart_rate', date);
-  static Future<Map<String,dynamic>?> getSteps(String date) => _fetchDataDay('steps', date);
-  static Future<Map<String,dynamic>?> getCalories(String date) => _fetchDataDay('calories', date);
-
-  //Function to get the RHR of the whole week, which will be used to create the chart in the homepage
   static Future<List<Map<String, dynamic>>> fetchWeeklyRestingHeartRate() async {
     final yesterday = DateTime.now().subtract(const Duration(days: 1));
     final startDate = _formatDate(yesterday.subtract(const Duration(days: 6)));
@@ -144,46 +113,19 @@ class Impact{
     throw Exception("Server error ${response.statusCode} on resting heart rate data");
   }
 
-  //Function to get the sleep data from last night --> gets time, efficiency and date
-  static Future<Map<String, dynamic>?> fetchLastNightSleep() async {
-    final yesterday = _formatDate(DateTime.now().subtract(const Duration(days: 1)));
-    final url = "${Impact.baseUrl}${Impact.dataUrl}sleep/patients/${Impact.patient}/day/$yesterday/";
 
-    final response = await _authenticatedGet(url);
-    
-    if (response.statusCode == 200) {
-      final responseBody = jsonDecode(response.body);
-      final rootData = responseBody['data'];
 
-      if (rootData == null) return null;
 
-      final innerData = rootData['data'];
 
-      // GESTIONE EDGE CASE: Se innerData è una lista (es. []), significa che non ci sono dati di sonno
-      if (innerData is List) {
-        print("Nessun dato di sonno registrato per la giornata di ieri.");
-        return null; 
-      }
 
-      // Se è una mappa, estraiamo i dati che ti interessano
-      final String date = rootData['date'] as String;
-      final double duration = (innerData['duration'] as num).toDouble();
-      final int efficiency = (innerData['efficiency'] as num).toInt();
 
-      // Ritorniamo una mappa semplice e "piatta"
-      return {
-        'date': date,
-        'duration': duration, // in millisecondi
-        'efficiency': efficiency,
-      };
-    }
-    
-    throw Exception("Server error ${response.statusCode} on sleep data");
-  }
+  // ─────────────────────────────────────────────────────────────────────────
+  // FUNZIONE PER GESTIONE FORMATO DATA
+  // ─────────────────────────────────────────────────────────────────────────
 
-  //Forse si può togliere
   static String _formatDate(DateTime d) =>
       "${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}";
-
+  // DateTime.now() restituisce yyyy-MM-gg hh:mm:ss.(6 cifre millisecondi) → gli diciamo di pescare solo anno mese e giorno
+  // OSS: dobbiamo fare pad perchè ad es. a maggio d.month è 5 e non 05 !!!
 }
 
