@@ -1,7 +1,7 @@
 //import 'dart:nativewrappers/_internal/vm/lib/ffi_native_type_patch.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'impact.dart'; // Per la nuova logica di login
+import '../services/impact.dart'; // Per la nuova logica di login
 
 class UserProvider extends ChangeNotifier {
   String _name = "";
