@@ -1,3 +1,4 @@
+import 'package:ZeroStress/providers/health_data_provider.dart';
 import 'package:ZeroStress/providers/user_provider.dart';
 import 'package:ZeroStress/screens/BreathingSelectionPage.dart';
 import 'package:flutter/material.dart';
@@ -20,6 +21,51 @@ class _HomePageState extends State<HomePage> {
   String infoStress = '';
   String infoRecovery = '';
   String infoRHR = '';
+  int _todayBreathingMinutes = 0;
+
+  // inizializza homepage richiedendo i dati al server impact e popolando i widget
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final health = Provider.of<HealthDataProvider>(context, listen: false);
+      await health.fetchAllData();
+      final minutes = await health.getTodayBreathingMinutes();
+      if (!mounted) return;
+      setState(() => _todayBreathingMinutes = minutes);
+      _showErrorIfAny(health);
+    });
+  }
+
+  // funzione per refreshare i dati quando richiesto
+  Future<void> _onRefresh() async { //CONTROLLARE ASSIEME NEL CASO DI RESET DATI
+    final health = Provider.of<HealthDataProvider>(context, listen: false);
+    await health.fetchAllData();
+    final minutes = await health.getTodayBreathingMinutes();
+    if (!mounted) return;
+    setState(() => _todayBreathingMinutes = minutes);
+    _showErrorIfAny(health);
+  }
+
+  // controlla se qualcosa è andato storto durante il caricamento dei dati
+  void _showErrorIfAny(HealthDataProvider health) {
+    if (health.errorMessage != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(health.errorMessage!),
+          backgroundColor: Colors.red.shade700,
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 5),
+          action: SnackBarAction(
+            label: 'Retry',
+            textColor: Colors.white,
+            onPressed: _onRefresh,
+          ),
+        ),
+      );
+    }
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -46,30 +92,41 @@ class _HomePageState extends State<HomePage> {
           child: Column(
             children: [
               Expanded(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    children: [
-                      // STREAK & RECAP BOX
-                      _buildStreakBox(),
-                      const SizedBox(height: 20),
+                child: RefreshIndicator(
+                  onRefresh: _onRefresh,
+                  color: Colors.white,
+                  backgroundColor: Theme.of(context).colorScheme.primary,
+                  child: SingleChildScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.all(20),
+                    child: Consumer<HealthDataProvider>(
+                      builder: (context, health, _) {
+                        return Column(
+                          children: [
+                            // STREAK & RECAP BOX
+                            _buildStreakBox(health),
+                            const SizedBox(height: 20),
 
-                      // TODAY STRESS & RECOVERY (Due box affiancati)
-                      Row(
-                        children: [
-                          Expanded(child: _buildSmallStatCardIncreasingValue("Today Stress", 30.0, infoStress)),
-                          const SizedBox(width: 15),
-                          Expanded(child: _buildSmallStatCardDecreasingValue("Recovery", 80, infoRecovery))
-                        ],
-                      ),
-                      const SizedBox(height: 10),
+                            // TODAY STRESS & RECOVERY (Due box affiancati)
+                            Row(
+                              children: [
+                                Expanded(child: _buildSmallStatCardIncreasingValue("Today Stress", 30.0, infoStress)), // ("Today Stress",health.stressLevel,infoStress)
+                                const SizedBox(width: 15),
+                                Expanded(child: _buildSmallStatCardDecreasingValue("Recovery", 80, infoRecovery))
+                              ],
+                            ),
 
-                      // GRAFICO RHR
-                      _buildRHRChartCard("Resting HR Trend", infoRHR),
-                      const SizedBox(height: 10),
+                            const SizedBox(height: 10),
 
-                      _buildDailyGoalCard("Daily Goal", userProvider.time.toDouble(), 30.0),
-                    ],
+                            // GRAFICO RHR
+                            _buildRHRChartCard("Resting HR Trend", infoRHR),
+                            const SizedBox(height: 10),
+
+                            _buildDailyGoalCard("Daily Goal", userProvider.time.toDouble(), _todayBreathingMinutes.toDouble())
+                          ]
+                        );
+                      }
+                    ),
                   ),
                 ),
               ),
@@ -128,7 +185,8 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildStreakBox() {
+  Widget _buildStreakBox(HealthDataProvider health) {
+    const days = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
@@ -137,11 +195,62 @@ class _HomePageState extends State<HomePage> {
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: Colors.white30),
       ),
-      child: const Column(
+      child: Column(
         children: [
-          Text("STREAK USO SEZIONE RESPIRAZ.", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-          Divider(color: Colors.white24),
-          Text("Recap disponibile dopo la notifica", style: TextStyle(color: Colors.white70, fontSize: 12)),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.local_fire_department,
+                  color: Colors.orangeAccent, size: 28),
+              const SizedBox(width: 8),
+              Text(
+                "${health.currentStreak} Day Streak",
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 22,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: List.generate(7, (i) {
+              final done = i < health.last7DaysCompleted.length
+                  ? health.last7DaysCompleted[i]
+                  : false;
+              return Column(
+                children: [
+                  Container(
+                    width: 32,
+                    height: 32,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: done
+                          ? Colors.orangeAccent
+                          : Colors.white.withOpacity(0.2),
+                      border: Border.all(
+                        color: done ? Colors.orangeAccent : Colors.white38,
+                        width: 2,
+                      ),
+                    ),
+                    child: Center(
+                      child: Icon(
+                        done ? Icons.check : Icons.circle,
+                        color: done ? Colors.white : Colors.white38,
+                        size: done ? 16 : 6,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(days[i],
+                    style: const TextStyle(color: Colors.white70, fontSize: 11)
+                  ),
+                ],
+              );
+            }),
+          ),
         ],
       ),
     );
