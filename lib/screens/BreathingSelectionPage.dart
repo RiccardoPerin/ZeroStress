@@ -1,3 +1,4 @@
+import 'package:ZeroStress/screens/BreathingExercisePage.dart';
 import 'package:flutter/material.dart';
 import 'package:ZeroStress/screens/SettingPage.dart';
 
@@ -26,7 +27,6 @@ class BreathingSelectionPage extends StatefulWidget {
 }
 
 class _BreathingSelectionPageState extends State<BreathingSelectionPage> {
-
   // Le 4 tecniche di respirazione predefinite
   final List<BreathingTechnique> techniques = const [
     BreathingTechnique(
@@ -122,28 +122,28 @@ class _BreathingSelectionPageState extends State<BreathingSelectionPage> {
               const SizedBox(height: 20),
               _buildDialogField(
                 controller: inhaleCtrl,
-                label: 'Inhale',
+                label: 'Inhale (sec)',
                 icon: Icons.arrow_upward,
                 color: accentColor,
               ),
               const SizedBox(height: 14),
               _buildDialogField(
                 controller: hold1Ctrl,
-                label: 'Hold',
+                label: 'Hold (sec)',
                 icon: Icons.pause,
                 color: accentColor,
               ),
               const SizedBox(height: 14),
               _buildDialogField(
                 controller: exhaleCtrl,
-                label: 'Exhale',
+                label: 'Exhale (sec)',
                 icon: Icons.arrow_downward,
                 color: accentColor,
                 ),
               const SizedBox(height: 14),
               _buildDialogField(
                 controller: hold2Ctrl,
-                label: 'Hold',
+                label: 'Hold (sec)',
                 icon: Icons.pause,
                 color: accentColor,
               ),
@@ -152,8 +152,8 @@ class _BreathingSelectionPageState extends State<BreathingSelectionPage> {
               const SizedBox(height: 14),
               _buildDialogField(
                 controller: totalCtrl,
-                label: 'Total Time',
-                icon: Icons.pause,
+                label: 'Total Time (min)',
+                icon: Icons.timer_outlined,
                 color: accentColor,
               ),
               const SizedBox(height: 8),
@@ -207,11 +207,30 @@ class _BreathingSelectionPageState extends State<BreathingSelectionPage> {
                   return;
                 }
 
-                setState(() {
-                  _customValues = [inhale, hold1, exhale, hold2, total];
-                });
+                final newValues = [inhale, hold1, exhale, hold2, total];
+                setState(() => _customValues = newValues);
+
                 Navigator.pop(dialogContext);
+
+                final customTechnique = BreathingTechnique(
+                  name: _buildCustomName(),
+                  description: 'Custom Breathing',
+                  phases: newValues,
+                  icon: Icons.tune,
+                  accentColor: accentColor,
+                );
+
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => BreathingExercisePage(
+                      technique: customTechnique,
+                      totalTimeInSeconds: total * 60,
+                    ),
+                  ),
+                );
               },
+              
               style: ElevatedButton.styleFrom(
                 backgroundColor: accentColor,
                 foregroundColor: Colors.white,
@@ -219,7 +238,7 @@ class _BreathingSelectionPageState extends State<BreathingSelectionPage> {
                 elevation: 0,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
               ),
-              child: const Text('Save', style: TextStyle(fontWeight: FontWeight.bold)),
+              child: const Text('Save & Play', style: TextStyle(fontWeight: FontWeight.bold)),
             ),
           ],
         );

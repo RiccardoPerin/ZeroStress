@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart'; 
 import '../providers/user_provider.dart';
-import 'LoginPage.dart';
+//import 'LoginPage.dart'; //Not needed anymore since we are using popUntil
 
 class SettingPage extends StatefulWidget {
   const SettingPage({Key? key}) : super(key: key);
@@ -202,10 +202,6 @@ class _SettingPageState extends State<SettingPage> {
                     ),
                   ),
                 ),
-                //Padding(
-                //  padding: const EdgeInsets.all(20.0),
-                //  child: _buildDangerZone(context)    
-                //)
               ],
             ),
           ),

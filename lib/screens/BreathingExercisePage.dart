@@ -1,9 +1,20 @@
 import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'BreathingSelectionPage.dart';
+import 'package:provider/provider.dart';
+import 'package:ZeroStress/providers/user_provider.dart';
+import 'package:ZeroStress/providers/health_data_provider.dart';
 
 class BreathingExercisePage extends StatefulWidget {
-  const BreathingExercisePage({Key? key}) : super(key: key);
+  final BreathingTechnique technique;
+  final int totalTimeInSeconds;
+
+  const BreathingExercisePage({
+    Key? key,
+    required this.technique,
+    required this.totalTimeInSeconds,
+  }) : super(key: key);
 
   @override
   State<BreathingExercisePage> createState() => _BreathingExercisePageState();
@@ -45,7 +56,15 @@ class _BreathingExercisePageState extends State<BreathingExercisePage> with Tick
   void initState() {
     super.initState();
 
-    int totalCycleTime = inhaleTime + hold1Time + exhaleTime + hold2Time;
+    //Legge le fasi dalla technique scelta
+    final p = widget.technique.phases;
+    inhaleTime = p.isNotEmpty ? p[0] : 4;
+    hold1Time = p.length > 1 ? p[1] : 0;
+    exhaleTime = p.length > 2 ? p[2] : 4;
+    hold2Time = p.length > 3 ? p[3] : 0;
+    totalTimeInSeconds = widget.totalTimeInSeconds;
+
+    final totalCycleTime = inhaleTime + hold1Time + exhaleTime + hold2Time;
     
     _breathController = AnimationController(
       vsync: this,
@@ -153,6 +172,16 @@ class _BreathingExercisePageState extends State<BreathingExercisePage> with Tick
 
       finalBpm = (initialBpm > 50) ? initialBpm - 5 : initialBpm; // da aggiornare
     });
+
+    final minutesCompleted = widget.totalTimeInSeconds ~/ 60;
+    final userProvider =
+        Provider.of<UserProvider>(context, listen: false);
+    final healthProvider =
+        Provider.of<HealthDataProvider>(context, listen: false);
+    
+    healthProvider.addBreathingMinutes(
+        minutesCompleted, userProvider.time);
+    //Da aggiungere notifiche
 
     _showCompletionDialog();
   }
@@ -278,19 +307,15 @@ class _BreathingExercisePageState extends State<BreathingExercisePage> with Tick
   }
 
   void _resetExercise() {
+    _countdownTimer?.cancel();
+    _preStartTimer?.cancel();
+    _breathController.stop();
+    _breathController.value = 0.0;
+    _stopBtnController.reset();
     setState(() {
       isPlaying = false;
-      isCountingDown = false; 
-      
-      _countdownTimer?.cancel();
-      _preStartTimer?.cancel(); 
-      
-      totalTimeInSeconds = 60; 
-      
-      _breathController.stop();
-      _breathController.value = 0.0; 
-    
-      _stopBtnController.reset(); 
+      isCountingDown = false;
+      totalTimeInSeconds = widget.totalTimeInSeconds;
     });
   }
 
