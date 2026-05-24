@@ -169,7 +169,7 @@ class Impact{
       return sleepMap.entries
           .map<Map<String, dynamic>>((entry) => {
                 'date': entry.key,
-                'duration': entry.value, // Questo sarà double? (quindi può essere null)
+                'duration': entry.value, // Questo sarà double? (quindi può essere null), ricordarsi che è in ms
               })
           .toList();
     }
@@ -179,7 +179,6 @@ class Impact{
   // 3. HEART RATE GIORNALIERO --> LISTA DI MAPPE CON ALL'INTERNO {"date": "2026-05-20","time": "00:00:02","value": 58.0}
   // 4. STEPS GIORNALIERI
   // 5. CALORIES GIORNALIERI
-  //  ------ TEORICAMENTE FUNZIONA (NON DA ERRORI) ---------
   static Future<List<Map<String, dynamic>>?> fetchDailyData(String dataType, DateTime requestedDate) async {
     final formattedDate = _formatDate(requestedDate);
 
