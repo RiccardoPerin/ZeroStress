@@ -74,7 +74,7 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       extendBodyBehindAppBar: true, //Serve perchè AppBar tiene sfondo solido
       // Build AppBar
-      appBar: _createAppBar(context),
+      appBar: _buildAppBar(context),
 
       body: Container(
         decoration: BoxDecoration(
@@ -119,7 +119,7 @@ class _HomePageState extends State<HomePage> {
                             const SizedBox(height: 10),
 
                             // GRAFICO RHR
-                            _buildRHRChartCard("Resting HR Trend", infoRHR),
+                            _buildRHRChartCard("Resting HR Trend", health, infoRHR),
                             const SizedBox(height: 10),
 
                             _buildDailyGoalCard("Daily Goal", userProvider.time.toDouble(), _todayBreathingMinutes.toDouble())
@@ -158,7 +158,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   //Deve essere PreferredSizeWidget perchè AppBar è già implementata ma facciamo così per miglior lettura codice
-  PreferredSizeWidget _createAppBar(BuildContext context) {
+  PreferredSizeWidget _buildAppBar(BuildContext context) {
     String greet = _greeting();
     return AppBar(
       backgroundColor: Colors.transparent,
@@ -462,123 +462,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildRHRChart(double rhr) {
-    double threshold = 1.2 * rhr;
-    return SizedBox(
-      height: 130, 
-      child: LineChart(
-        LineChartData(
-          lineTouchData: LineTouchData(
-            touchTooltipData: LineTouchTooltipData(
-              getTooltipColor: (touchedSpot) => Theme.of(context).primaryColor.withOpacity(0.8),
-              getTooltipItems: (List<LineBarSpot> touchedBarSpots) {
-                return touchedBarSpots.map((barSpot) {
-                  return LineTooltipItem(
-                    '${barSpot.y.toInt()} BPM',
-                    const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                  );
-                }).toList();
-              },
-            ),
-            handleBuiltInTouches: true,
-          ),
-
-          extraLinesData: ExtraLinesData(
-            horizontalLines: [
-              HorizontalLine(
-                y: threshold,
-                color: Colors.redAccent.withOpacity(0.8),
-                strokeWidth: 2,
-                dashArray: [10, 5],
-                label: HorizontalLineLabel(
-                  show: true,
-                  alignment: Alignment.topRight,
-                  padding: const EdgeInsets.only(right: 5, bottom: 5),
-                  style: TextStyle(
-                    color: Colors.redAccent.withOpacity(0.8),
-                    fontWeight: FontWeight.bold,
-                    fontSize: 10
-                  ),
-                  labelResolver: (line) => 'RHR + 20%'
-                )
-              )
-            ]
-          ),
-          gridData: FlGridData(
-            show: true,
-            drawHorizontalLine: false,
-            drawVerticalLine: false, // Pulizia: solo linee orizzontali
-            horizontalInterval: 10, 
-            getDrawingHorizontalLine: (value) => const FlLine(
-              color: Colors.grey,
-              strokeWidth: 1,
-            ),
-          ),
-          titlesData: FlTitlesData(
-            show: true,
-            rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-            topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-            bottomTitles: AxisTitles(
-              sideTitles: SideTitles(
-                showTitles: true,
-                reservedSize: 22,
-                interval: 1,
-                getTitlesWidget: (value, meta) {
-                  // Mostriamo i giorni della settimana abbreviati
-                  const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-                  if (value.toInt() >= 0 && value.toInt() < days.length) {
-                    return SideTitleWidget(
-                      meta: meta,
-                      child: Text(days[value.toInt()], 
-                        style: const TextStyle(color: Colors.grey, fontSize: 10)),
-                    );
-                  }
-                  return const SizedBox();
-                },
-              ),
-            ),
-            leftTitles: AxisTitles(
-              sideTitles: SideTitles(
-                showTitles: true,
-                interval: 10, // Mostra 40, 60, 80 BPM
-                reservedSize: 30,
-                getTitlesWidget: (value, meta) => Text(
-                  value.toInt().toString(),
-                  style: const TextStyle(color: Colors.grey, fontSize: 10),
-                ),
-              ),
-            ),
-          ),
-          borderData: FlBorderData(show: false),
-          // Adattiamo i limiti per il battito cardiaco
-          minX: 0,
-          maxX: 6,  // 7 giorni (0-6)
-          minY: 40, // Minimo BPM
-          maxY: 80, // Massimo BPM
-          lineBarsData: [
-            LineChartBarData(
-              spots: const [
-                FlSpot(0, 50),
-                FlSpot(1, 61),
-                FlSpot(2, 58),
-                FlSpot(3, 63),
-                FlSpot(4, 72), 
-                FlSpot(5, 60),
-                FlSpot(6, 70),
-              ],
-              isCurved: false,
-              color: Theme.of(context).primaryColor,
-              barWidth: 4,
-              isStrokeCapRound: true,
-              dotData: const FlDotData(show: true),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildRHRChartCard(String title, String info) {
+  Widget _buildRHRChartCard(String title, HealthDataProvider health, String info) {
     return Container(
       width: double.infinity,
       height: 220,
@@ -626,9 +510,141 @@ class _HomePageState extends State<HomePage> {
           
           const Spacer(),
           Center(
-            child: _buildRHRChart(50)
+            child: _buildRHRChart(health.weeklyRHR, health.baselineRHR)
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildRHRChart(List<double?> weeklyRHR, double baseline) {
+    final double threshold = baseline * 1.2;
+
+    // Build day labels: index 0 = yesterday-6, index 6 = yesterday
+    final yesterday = DateTime.now().subtract(const Duration(days: 1));
+    final dayLabels = List.generate(7, (i) {
+      final d = yesterday.subtract(Duration(days: 6 - i));
+      const abbr = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+      return abbr[d.weekday - 1];
+    });
+
+    final spots = <FlSpot>[];
+    for (int i = 0; i < 7; i++) {
+      if (weeklyRHR[i] != null) {
+        spots.add(FlSpot(i.toDouble(), weeklyRHR[i]!));
+      }
+    }
+
+    if (spots.isEmpty) {
+      return const SizedBox(
+        height: 130,
+        child: Center(
+          child: Text("No data available",
+              style: TextStyle(color: Colors.grey)),
+        ),
+      );
+    }
+
+    final allValues = spots.map((s) => s.y).toList()..add(threshold);
+    final minY =
+        (allValues.reduce((a, b) => a < b ? a : b) - 10).roundToDouble();
+    final maxY =
+        (allValues.reduce((a, b) => a > b ? a : b) + 10).roundToDouble();
+
+    return SizedBox(
+      height: 130,
+      child: LineChart(
+        LineChartData(
+          lineTouchData: LineTouchData(
+            touchTooltipData: LineTouchTooltipData(
+              getTooltipColor: (spot) =>
+                  Theme.of(context).primaryColor.withOpacity(0.8),
+              getTooltipItems: (spots) => spots
+                  .map((s) => LineTooltipItem(
+                        '${s.y.toInt()} BPM',
+                        const TextStyle(
+                            color: Colors.white, fontWeight: FontWeight.bold),
+                      ))
+                  .toList(),
+            ),
+            handleBuiltInTouches: true,
+          ),
+          extraLinesData: ExtraLinesData(horizontalLines: [
+            HorizontalLine(
+              y: threshold,
+              color: Colors.redAccent.withOpacity(0.8),
+              strokeWidth: 2,
+              dashArray: [10, 5],
+              label: HorizontalLineLabel(
+                show: true,
+                alignment: Alignment.topRight,
+                padding: const EdgeInsets.only(right: 5, bottom: 5),
+                style: TextStyle(
+                    color: Colors.redAccent.withOpacity(0.8),
+                    fontWeight: FontWeight.bold,
+                    fontSize: 10),
+                labelResolver: (_) => 'RHR +20%',
+              ),
+            ),
+          ]),
+          gridData: const FlGridData(
+            show: true,
+            drawHorizontalLine: false,
+            drawVerticalLine: false,
+          ),
+          titlesData: FlTitlesData(
+            show: true,
+            rightTitles:
+                const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            topTitles:
+                const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            bottomTitles: AxisTitles(
+              sideTitles: SideTitles(
+                showTitles: true,
+                reservedSize: 22,
+                interval: 1,
+                getTitlesWidget: (value, meta) {
+                  final idx = value.toInt();
+                  if (idx >= 0 && idx < dayLabels.length) {
+                    return SideTitleWidget(
+                      meta: meta,
+                      child: Text(dayLabels[idx],
+                          style: const TextStyle(
+                              color: Colors.grey, fontSize: 10)),
+                    );
+                  }
+                  return const SizedBox();
+                },
+              ),
+            ),
+            leftTitles: AxisTitles(
+              sideTitles: SideTitles(
+                showTitles: true,
+                interval: 10,
+                reservedSize: 30,
+                getTitlesWidget: (value, meta) => Text(
+                  value.toInt().toString(),
+                  style: const TextStyle(color: Colors.grey, fontSize: 10),
+                ),
+              ),
+            ),
+          ),
+          borderData: FlBorderData(show: false),
+          minX: 0,
+          maxX: 6,
+          minY: minY,
+          maxY: maxY,
+          lineBarsData: [
+            LineChartBarData(
+              spots: spots,
+              isCurved: false,
+              color: Theme.of(context).primaryColor,
+              barWidth: 4,
+              isStrokeCapRound: true,
+              dotData: const FlDotData(show: true),
+            ),
+          ],
+        ),
       ),
     );
   }
