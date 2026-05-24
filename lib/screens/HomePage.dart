@@ -18,10 +18,8 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  String infoStress = '';
-  String infoRecovery = '';
-  String infoRHR = '';
   int _todayBreathingMinutes = 0;
+  final _scrollController = ScrollController();
 
   // inizializza homepage richiedendo i dati al server impact e popolando i widget
   @override
@@ -37,9 +35,16 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
   // funzione per refreshare i dati quando richiesto
-  Future<void> _onRefresh() async { //CONTROLLARE ASSIEME NEL CASO DI RESET DATI
+  Future<void> _onRefresh() async {
     final health = Provider.of<HealthDataProvider>(context, listen: false);
+    _scrollController.jumpTo(0); //Fa si che quando scrolli per refreshare non scenda 
     await health.fetchAllData();
     final minutes = await health.getTodayBreathingMinutes();
     if (!mounted) return;
@@ -97,6 +102,7 @@ class _HomePageState extends State<HomePage> {
                   color: Colors.white,
                   backgroundColor: Theme.of(context).colorScheme.primary,
                   child: SingleChildScrollView(
+                    controller: _scrollController,
                     physics: const AlwaysScrollableScrollPhysics(),
                     padding: const EdgeInsets.all(20),
                     child: Consumer<HealthDataProvider>(
@@ -110,16 +116,16 @@ class _HomePageState extends State<HomePage> {
                             // TODAY STRESS & RECOVERY (Due box affiancati)
                             Row(
                               children: [
-                                Expanded(child: _buildSmallStatCardIncreasingValue("Today Stress", 30.0, infoStress)), // ("Today Stress",health.stressLevel,infoStress)
+                                Expanded(child: _buildSmallStatCardIncreasingValue("Today Stress", 30.0)), // ("Today Stress",health.stressLevel)
                                 const SizedBox(width: 15),
-                                Expanded(child: _buildSmallStatCardDecreasingValue("Recovery", 80, infoRecovery))
+                                Expanded(child: _buildSmallStatCardDecreasingValue("Recovery", 80))
                               ],
                             ),
 
                             const SizedBox(height: 10),
 
                             // GRAFICO RHR
-                            _buildRHRChartCard("Resting HR Trend", health, infoRHR),
+                            _buildRHRChartCard("Resting HR Trend", health),
                             const SizedBox(height: 10),
 
                             _buildDailyGoalCard("Daily Goal", userProvider.time.toDouble(), _todayBreathingMinutes.toDouble())
@@ -143,13 +149,13 @@ class _HomePageState extends State<HomePage> {
 
   String _greeting() {
     final hourNow = DateTime.now().hour;
-    if (hourNow > 5 && hourNow < 13) {
+    if (hourNow >= 5 && hourNow < 13) {
       return 'Morning';
     }
-    else if (hourNow > 13 && hourNow < 18) {
+    else if (hourNow >= 13 && hourNow <= 18) {
       return 'Afternoon';
     }
-    else if (hourNow > 18 && hourNow < 22) {
+    else if (hourNow > 18 && hourNow <= 22) {
       return 'Evening';
     }
     else {
@@ -257,7 +263,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   //IncreasingValue perchè serve per creare Stress level, per cui il colore 'peggiora' al crescere
-  Widget _buildSmallStatCardIncreasingValue(String title, double valPerc, String info) {
+  Widget _buildSmallStatCardIncreasingValue(String title, double valPerc) {
     Color colorTxt = Colors.greenAccent;
     String txtVal = '';
     if (valPerc >= 0 && valPerc <= 20) {
@@ -289,34 +295,20 @@ class _HomePageState extends State<HomePage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Text(title, style: const TextStyle(fontSize: 12, color: Colors.grey)),
-              IconButton(
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(),
-                onPressed: () {
-                  // Qui potrai mostrare un dialogo o un messaggio con la stringa 'info'
-                },
-                icon: const Icon(Icons.info_outline),
-                iconSize: 16,
-                visualDensity: VisualDensity.compact,
-                color: Colors.grey,
-              ),
-            ],
-          ),
-
-          Center(
-            child: Text(txtVal, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: colorTxt.withOpacity(0.8)))
+          Text(
+            title, 
+            style: const TextStyle(
+              fontWeight: FontWeight.w600, 
+              fontSize: 14,
+              color: Color(0xFF384242)
+            )
           ),
               
           const SizedBox(height: 5),
 
           Center(
             child: SizedBox(
-                height: 120,
+                height: 110,
                 child: SfRadialGauge(
                   axes: <RadialAxis>[ //Serve per avere il cerchio di progresso
                           RadialAxis(
@@ -353,14 +345,20 @@ class _HomePageState extends State<HomePage> {
                         ]
                 ),
             ),
-          )   
+          ),
+
+          //const SizedBox(height: 5),
+
+          Center(
+            child: Text(txtVal, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: colorTxt.withOpacity(0.8)))
+          ),   
         ]
       )
     );
   }
 
   //DecreasingValue perchè serve per creare Recovery level, per cui il colore 'migliora' al crescere
-  Widget _buildSmallStatCardDecreasingValue(String title, double valPerc, String info) {
+  Widget _buildSmallStatCardDecreasingValue(String title, double valPerc) {
     Color colorTxt = Colors.greenAccent;
     String txtVal = '';
     if (valPerc >= 0 && valPerc <= 15) {
@@ -392,34 +390,20 @@ class _HomePageState extends State<HomePage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Text(title, style: const TextStyle(fontSize: 12, color: Colors.grey)),
-              IconButton(
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(),
-                onPressed: () {
-                  // Qui potrai mostrare un dialogo o un messaggio con la stringa 'info'
-                },
-                icon: const Icon(Icons.info_outline),
-                iconSize: 16,
-                visualDensity: VisualDensity.compact,
-                color: Colors.grey,
-              ),
-            ],
-          ),
-
-          Center(
-            child: Text(txtVal, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: colorTxt.withOpacity(0.8)))
+          Text(
+            title, 
+            style: const TextStyle(
+              fontWeight: FontWeight.w600, 
+              fontSize: 14,
+              color: Color(0xFF384242)
+            )
           ),
               
           const SizedBox(height: 5),
 
           Center(
             child: SizedBox(
-                height: 120,
+                height: 110,
                 child: SfRadialGauge(
                   axes: <RadialAxis>[ //Serve per avere il cerchio di progresso
                           RadialAxis(
@@ -456,16 +440,20 @@ class _HomePageState extends State<HomePage> {
                         ]
                 ),
             ),
-          )   
+          ),
+
+          Center(
+            child: Text(txtVal, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: colorTxt.withOpacity(0.8)))
+          ),  
         ]
       )
     );
   }
 
-  Widget _buildRHRChartCard(String title, HealthDataProvider health, String info) {
+  Widget _buildRHRChartCard(String title, HealthDataProvider health) {
     return Container(
       width: double.infinity,
-      height: 220,
+      height: 200,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white, 
@@ -482,30 +470,13 @@ class _HomePageState extends State<HomePage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Text(
-                title, 
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold, 
-                  fontSize: 18,
-                  color: Color(0xFF384242)
-                )
-              ),
-              IconButton(
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(),
-                onPressed: () {
-                  // Qui potrai mostrare un dialogo o un messaggio con la stringa 'info'
-                },
-                icon: const Icon(Icons.info_outline),
-                iconSize: 16,
-                visualDensity: VisualDensity.compact,
-                color: Colors.grey,
-              ),
-            ],
+          Text(
+            title, 
+            style: const TextStyle(
+              fontWeight: FontWeight.bold, 
+              fontSize: 18,
+              color: Color(0xFF384242)
+            )
           ),
           
           const Spacer(),
@@ -528,14 +499,19 @@ class _HomePageState extends State<HomePage> {
       return abbr[d.weekday - 1];
     });
 
-    final spots = <FlSpot>[];
+    final allSpots = <FlSpot>[];
+    final validSpots = <FlSpot>[];
     for (int i = 0; i < 7; i++) {
       if (weeklyRHR[i] != null) {
-        spots.add(FlSpot(i.toDouble(), weeklyRHR[i]!));
+        final spot = FlSpot(i.toDouble(), weeklyRHR[i]!);
+        allSpots.add(spot);
+        validSpots.add(spot);
+      } else {
+        allSpots.add(FlSpot(i.toDouble(), double.nan));
       }
     }
 
-    if (spots.isEmpty) {
+    if (validSpots.isEmpty) {
       return const SizedBox(
         height: 130,
         child: Center(
@@ -545,7 +521,7 @@ class _HomePageState extends State<HomePage> {
       );
     }
 
-    final allValues = spots.map((s) => s.y).toList()..add(threshold);
+    final allValues = validSpots.map((s) => s.y).toList()..add(threshold);
     final minY =
         (allValues.reduce((a, b) => a < b ? a : b) - 10).roundToDouble();
     final maxY =
@@ -636,7 +612,7 @@ class _HomePageState extends State<HomePage> {
           maxY: maxY,
           lineBarsData: [
             LineChartBarData(
-              spots: spots,
+              spots: allSpots,
               isCurved: false,
               color: Theme.of(context).primaryColor,
               barWidth: 4,
@@ -774,7 +750,7 @@ class _HomePageState extends State<HomePage> {
 
   Widget _buildBottomNav() {
     return Container(
-      margin: const EdgeInsets.fromLTRB(20, 20, 20, 5),
+      margin: const EdgeInsets.fromLTRB(20, 10, 20, 0),
       padding: const EdgeInsets.symmetric(vertical: 10),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -789,8 +765,9 @@ class _HomePageState extends State<HomePage> {
             icon: const Icon(Icons.air, color: Colors.grey, size: 30),
             onPressed: () {
               Navigator.push(
-                  context, 
-                  MaterialPageRoute(builder: (context) => BreathingSelectionPage()));
+                  context,
+                  MaterialPageRoute(builder: (context) => BreathingSelectionPage()),
+              ).then((_) => _onRefresh()); //This triggers the refresh whenever we go back to homepage after breathing section
             },
           ),
         ],

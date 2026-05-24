@@ -43,7 +43,7 @@ class MyApp extends StatelessWidget {
             secondary: accentLavender
         ),
 
-        textTheme: GoogleFonts.poppinsTextTheme(
+        textTheme: GoogleFonts.nunitoTextTheme( //poppinsTextTheme altrimenti
           Theme.of(context).textTheme
         ),
 

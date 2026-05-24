@@ -39,14 +39,17 @@ class HealthDataProvider extends ChangeNotifier {
     try {
 
       final weeklyRHR = await Impact.fetchWeeklyRestingHeartRate();
+      final weeklySleep = await Impact.fetchWeeklySleepData(); 
+      final dailyHR = await Impact.fetchDailyData("heart_rate", DateTime.now().subtract(const Duration(days: 1)));
+      final dailySteps = await Impact.fetchDailyData("steps", DateTime.now().subtract(const Duration(days: 1)));
+      final dailyCalories = await Impact.fetchDailyData("calories", DateTime.now().subtract(const Duration(days: 1)));
       
+
       _computeWeeklyRHR(weeklyRHR);
       await _loadStreak();
 
       _hasHealthData = true;
-      print('prova');
     } catch (e) {
-      print('ciao');
       _errorMessage = e.toString().replaceAll("Exception: ", "");
     }
 
