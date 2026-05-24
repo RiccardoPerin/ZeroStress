@@ -1,5 +1,8 @@
+import 'package:ZeroStress/providers/user_provider.dart';
 import 'package:ZeroStress/screens/BreathingExercisePage.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 // Modello dati per ogni tecnica di respirazione
 class BreathingTechnique {
@@ -26,19 +29,21 @@ class BreathingSelectionPage extends StatefulWidget {
 }
 
 class _BreathingSelectionPageState extends State<BreathingSelectionPage> {
+  static const String _customPrefKey = 'custom_breathing_values';
+  
   // Le 4 tecniche di respirazione predefinite
   final List<BreathingTechnique> techniques = const [
     BreathingTechnique(
       name: '5-2-5',
       description: 'Calm & Relaxation',
-      phases: [5, 2, 5, 0, 5], // inhale, hold, exhale, hold, total time (DA PRENDERE DAI SETTINGS)
+      phases: [5, 2, 5, 0], // inhale, hold, exhale, hold, total time
       icon: Icons.self_improvement,
       accentColor: Color(0xFF8EAFCE),
     ),
     BreathingTechnique(
       name: '4-7-8',
       description: 'Deep Sleep & Anxiety Relief',
-      phases: [4, 7, 8, 0, 5],
+      phases: [4, 7, 8, 0],
       icon: Icons.nightlight_round,
       accentColor: Color(0xFFBDB2FF),
     ),
@@ -52,14 +57,35 @@ class _BreathingSelectionPageState extends State<BreathingSelectionPage> {
     BreathingTechnique(
       name: '4-8',
       description: 'Quick Stress Relief',
-      phases: [4, 0, 8, 0, 5],
+      phases: [4, 0, 8, 0],
       icon: Icons.timer,
       accentColor: Color(0xFF6B9FAD),
     ),
   ];
 
+  List<int> _customValues = [4, 0, 4, 0, 5];
 
-  List<int> _customValues = [4, 0, 4, 0, 5]; // IL TOTAL TIME DA PRENDERE SUI SETTINGS
+  @override
+  void initState() {
+    super.initState();
+    _loadCustomValues();
+  }
+
+  Future<void> _loadCustomValues() async {
+    final sp = await SharedPreferences.getInstance();
+    final saved = sp.getStringList(_customPrefKey);
+    if (saved != null && saved.length == 5) {
+      setState(() {
+        _customValues = saved.map((v) => int.tryParse(v) ?? 0).toList();
+      });
+    }
+  }
+
+  Future<void> _saveCustomValues(List<int> values) async {
+    final sp = await SharedPreferences.getInstance();
+    await sp.setStringList(
+        _customPrefKey, values.map((v) => v.toString()).toList());
+  }
 
   // Costruisce la stringa del nome custom tipo "4-4" o "4-2-4-2"
   String _buildCustomName() {
@@ -74,6 +100,95 @@ class _BreathingSelectionPageState extends State<BreathingSelectionPage> {
     parts.add(exhale.toString());
     if (hold2 > 0) parts.add(hold2.toString());
     return parts.join('-');
+  }
+
+  void _showTechniqueDialog(BuildContext context, BreathingTechnique technique) {
+    final provider = Provider.of<UserProvider>(context, listen: false);
+    final totalCtrl = TextEditingController(text: provider.time.toString()); //Time shown at the beginning
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          contentPadding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
+          title: Container(
+            width: 52,
+            height: 52,
+            decoration: BoxDecoration(
+              color: technique.accentColor.withOpacity(0.15),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(technique.icon, color: technique.accentColor, size: 28),
+          ),
+
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                technique.description,
+                style: const TextStyle(fontSize: 16, color: Colors.grey),
+              ),
+              const SizedBox(height: 20),
+              _buildDialogField(
+                controller: totalCtrl,
+                label: 'Total Time (min)',
+                icon: Icons.timer_outlined,
+                color: technique.accentColor,
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
+          actionsPadding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+          actionsAlignment: MainAxisAlignment.spaceEvenly,
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.grey,
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              ),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                final total = int.tryParse(totalCtrl.text.trim()) ?? 0;
+                if (total <= 0) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: const Text('Session duration must be greater than 0'),
+                      backgroundColor: Colors.redAccent,
+                      behavior: SnackBarBehavior.floating,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                  );
+                  return;
+                }
+                Navigator.pop(dialogContext);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => BreathingExercisePage(
+                      technique: technique,
+                      totalTimeInSeconds: total * 60,
+                    ),
+                  ),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: technique.accentColor,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
+                elevation: 0,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              ),
+              child: const Text('Start', style: TextStyle(fontWeight: FontWeight.bold)),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   void _showCustomDialog(BuildContext context) {
@@ -113,10 +228,9 @@ class _BreathingSelectionPageState extends State<BreathingSelectionPage> {
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const SizedBox(height: 8),
               const Text(
                 'Choose the duration for each phase',
-                style: TextStyle(fontSize: 12, color: Colors.grey),
+                style: TextStyle(fontSize: 14, color: Colors.grey),
               ),
               const SizedBox(height: 20),
               _buildDialogField(
@@ -208,6 +322,7 @@ class _BreathingSelectionPageState extends State<BreathingSelectionPage> {
 
                 final newValues = [inhale, hold1, exhale, hold2, total];
                 setState(() => _customValues = newValues);
+                _saveCustomValues(newValues);
 
                 Navigator.pop(dialogContext);
 
@@ -367,9 +482,7 @@ class _BreathingSelectionPageState extends State<BreathingSelectionPage> {
   Widget _buildTechniqueCard(BuildContext context, BreathingTechnique technique) {
     return GestureDetector(
       onTap: () {
-        Navigator.push(context, MaterialPageRoute(
-          builder: (context) => BreathingExercisePage(technique: technique, totalTimeInSeconds: 60,) //Da modificare mettendo quello scelto dall'utente tramite pop-up
-        ));
+        _showTechniqueDialog(context, technique);
       },
       child: Container(
         decoration: BoxDecoration(
