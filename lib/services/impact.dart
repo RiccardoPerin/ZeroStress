@@ -93,26 +93,136 @@ class Impact{
     final startDate = _formatDate(yesterday.subtract(const Duration(days: 6)));
     final endDate = _formatDate(yesterday);
 
+    //Creazione della mappa vuota per gestire comunque i null
+    final Map<String, double?> weeklyMap = {};
+    for (int i = 6; i >= 0; i--) {
+      final dateStr = _formatDate(yesterday.subtract(Duration(days: i)));
+      weeklyMap[dateStr] = null;
+    }
+    
     final url = "${Impact.baseUrl}${Impact.dataUrl}resting_heart_rate/patients/${Impact.patient}"
         "/daterange/start_date/$startDate/end_date/$endDate/";
 
     final response = await _authenticatedGet(url);
+    if (response.statusCode == 404){
+      return weeklyMap.entries.map((e) => {'date': e.key, 'value': e.value}).toList();
+    }
     if (response.statusCode == 200) {
       final responseBody = jsonDecode(response.body);
       final rawList = responseBody['data'] as List;
 
-      // TRASFORMAZIONE: Semplifichiamo la struttura della lista
-      return rawList.map<Map<String, dynamic>>((item) {
-        return {
-          'date': item['date'] as String,
-          // Usiamo 'as num' e '.toDouble()' per metterci al sicuro da oscillazioni dei tipi del server
-          'value': (item['data']['value'] as num).toDouble(), 
-        };
-      }).toList();
+      //Sovrascrivo i valori null dove è presente il dato
+      for (var item in rawList) {
+        final date = item['date'] as String;
+        
+        // Controlliamo se il giorno è presente nel nostro range e se ha un valore valido
+        if (weeklyMap.containsKey(date) && item['data'] != null && item['data']['value'] != null) {
+          weeklyMap[date] = (item['data']['value'] as num).toDouble();
+        }
+      }
+
+      return weeklyMap.entries
+          .map<Map<String, dynamic>>((entry) => {
+                'date': entry.key,
+                'value': entry.value, // Questo sarà double? (quindi può essere null)
+              })
+          .toList();
     }
     throw Exception("Server error ${response.statusCode} on resting heart rate data");
   }
 
+  // 2. WEEKLY SLEEP DATA --> DURATION
+  static Future<List<Map<String, dynamic>>> fetchWeeklySleepData() async {
+    final yesterday = DateTime.now().subtract(const Duration(days: 1));
+    final startDate = _formatDate(yesterday.subtract(const Duration(days: 6)));
+    final endDate = _formatDate(yesterday);
+
+    //Creazione della mappa vuota per gestire comunque i null
+    final Map<String, double?> sleepMap = {};
+    for (int i = 6; i >= 0; i--) {
+      final dateStr = _formatDate(yesterday.subtract(Duration(days: i)));
+      sleepMap[dateStr] = null;
+    }
+    
+    final url = "${Impact.baseUrl}${Impact.dataUrl}resting_heart_rate/patients/${Impact.patient}"
+        "/daterange/start_date/$startDate/end_date/$endDate/";
+
+    final response = await _authenticatedGet(url);
+    if (response.statusCode == 404){
+      return sleepMap.entries.map((e) => {'date': e.key, 'value': e.value}).toList();
+    }
+    if (response.statusCode == 200) {
+      final responseBody = jsonDecode(response.body);
+      final rawList = responseBody['data'] as List;
+
+      //Sovrascrivo i valori null dove è presente il dato
+      for (var item in rawList) {
+        final date = item['date'] as String;
+        
+        // Controlliamo se il giorno è presente nel nostro range e se ha un valore valido
+        if (sleepMap.containsKey(date) && item['data'] != null && item['data']['duration'] != null) {
+          final duration = item['data']['duration'];
+          sleepMap[date] = duration.toDouble();
+        }
+      }
+
+      return sleepMap.entries
+          .map<Map<String, dynamic>>((entry) => {
+                'date': entry.key,
+                'duration': entry.value, // Questo sarà double? (quindi può essere null)
+              })
+          .toList();
+    }
+    throw Exception("Server error ${response.statusCode} on resting heart rate data");
+  }
+
+  // 3. HEART RATE GIORNALIERO --> LISTA DI MAPPE CON ALL'INTERNO {"date": "2026-05-20","time": "00:00:02","value": 58.0}
+  // 4. STEPS GIORNALIERI
+  // 5. CALORIES GIORNALIERI
+  //  ------ TEORICAMENTE FUNZIONA (NON DA ERRORI) ---------
+  static Future<List<Map<String, dynamic>>?> fetchDailyData(String dataType, DateTime requestedDate) async {
+    final formattedDate = _formatDate(requestedDate);
+
+    final url = "${Impact.baseUrl}${Impact.dataUrl}$dataType/patients/${Impact.patient}/day/$formattedDate/";
+    final response = await _authenticatedGet(url);
+    if (response.statusCode == 404) return [];
+    
+    if (response.statusCode == 200) {
+      final responseBody = jsonDecode(response.body);
+      
+      // Access the inner 'data' map, and then the 'data' list inside it
+      final dataContainer = responseBody['data'] as Map<String, dynamic>?;
+      if (dataContainer == null || dataContainer['data'] == null) return [];
+      
+      final rawMeasurements = dataContainer['data'] as List;
+      //final dateStr = dataContainer['date'] as String; // "2026-05-20" //Capire se serve avere la data
+
+      // Transform the list, keeping null values intact
+      return rawMeasurements.map<Map<String, dynamic>>((item) {
+        // Safely extract the value without filtering out nulls
+        final rawValue = item['value'];
+        double? doubleValue;
+
+        //Controlla per fare il cast corretto siccome il value di Calories è stringa
+        if (rawValue != null){
+          if (rawValue is num) {
+            doubleValue = rawValue.toDouble();
+          }
+          else if (rawValue is String) {
+            doubleValue = double.tryParse(rawValue);
+          }
+        }
+
+        return {
+          //'date': dateStr,
+          'time': item['time'] as String,
+          'value': doubleValue, // This can safely be null
+        };
+      }).toList();
+    }
+    
+    throw Exception("Server error ${response.statusCode} on heart rate intraday data");
+  }
 
 
 

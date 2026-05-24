@@ -17,6 +17,7 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController passwordController = TextEditingController();
 
   bool _obscurePassword = true;
+  bool _isLoading = false;
 
   // Necessario metodo dispose() per eliminare i controllori dalla memoria post login, altrimenti andrebbero ad occupare spazio
   // nella RAM per nulla. A memorizzarne i valori ci pensa il provider
@@ -166,7 +167,9 @@ class _LoginPageState extends State<LoginPage> {
       alignment: Alignment.center,
       child: 
         ElevatedButton(
-          onPressed: () async {
+          onPressed: _isLoading ? null : () async {
+            setState(() => _isLoading = true);
+
             final provider = Provider.of<UserProvider>(context, listen: false);
 
             String? errorMessage = await provider.login(
@@ -176,9 +179,11 @@ class _LoginPageState extends State<LoginPage> {
 
             if (!context.mounted) return;
 
+            setState(() => _isLoading = false);
+
             if (errorMessage == null) {
               // Successo
-            } 
+            }
             else {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
@@ -199,10 +204,16 @@ class _LoginPageState extends State<LoginPage> {
               borderRadius: BorderRadius.circular(30)
             )
           ),
-          child: const Text(
-            'Login',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)
-          )
+          child: _isLoading
+            ? const SizedBox(
+                width: 22,
+                height: 22,
+                child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
+              )
+            : const Text(
+                'Login',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+              )
         )
     );
   }

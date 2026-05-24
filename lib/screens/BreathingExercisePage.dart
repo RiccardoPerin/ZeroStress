@@ -283,7 +283,7 @@ class _BreathingExercisePageState extends State<BreathingExercisePage> with Tick
                   child: ElevatedButton(
                     onPressed: () {
                       _resetExercise(); 
-                      Navigator.of(context)..pop()..pop();
+                      Navigator.of(context).popUntil((route) => route.isFirst); //Goes back to HomePage 
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Theme.of(context).colorScheme.primary,

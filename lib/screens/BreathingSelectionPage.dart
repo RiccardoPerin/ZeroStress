@@ -1,6 +1,5 @@
 import 'package:ZeroStress/screens/BreathingExercisePage.dart';
 import 'package:flutter/material.dart';
-import 'package:ZeroStress/screens/SettingPage.dart';
 
 // Modello dati per ogni tecnica di respirazione
 class BreathingTechnique {
@@ -368,9 +367,9 @@ class _BreathingSelectionPageState extends State<BreathingSelectionPage> {
   Widget _buildTechniqueCard(BuildContext context, BreathingTechnique technique) {
     return GestureDetector(
       onTap: () {
-        // Navigator.push(context, MaterialPageRoute(
-        //   builder: (context) => BreathingExercisePage(technique: technique),
-        // ));
+        Navigator.push(context, MaterialPageRoute(
+          builder: (context) => BreathingExercisePage(technique: technique, totalTimeInSeconds: 60,) //Da modificare mettendo quello scelto dall'utente tramite pop-up
+        ));
       },
       child: Container(
         decoration: BoxDecoration(
@@ -430,8 +429,6 @@ class _BreathingSelectionPageState extends State<BreathingSelectionPage> {
 
   Widget _buildCustomCard(BuildContext context) {
     const accentColor =  Color.fromARGB(193, 48, 167, 137);
-    final customName = _buildCustomName();
-    final totalMin = _customValues[4];
 
     return GestureDetector(
       onTap: () => _showCustomDialog(context),
