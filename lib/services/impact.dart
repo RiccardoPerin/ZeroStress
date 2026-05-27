@@ -223,7 +223,69 @@ class Impact{
     throw Exception("Server error ${response.statusCode} on heart rate intraday data");
   }
 
+  // 6. DAILY EXERCISE, WILL RETURN TIME OF START AND TIME OF END
+  static Future<List<Map<String, dynamic>>?> fetchDailyExcersiseData(DateTime requestedDate) async {
+    final formattedDate = _formatDate(requestedDate);
 
+    final url = "${Impact.baseUrl}${Impact.dataUrl}exercise/patients/${Impact.patient}/day/$formattedDate/";
+    final response = await _authenticatedGet(url);
+    if (response.statusCode == 404) return [];
+    
+    if (response.statusCode == 200) {
+      final responseBody = jsonDecode(response.body);
+      
+      // Access the inner 'data' map, and then the 'data' list inside it
+      final dataContainer = responseBody['data'] as Map<String, dynamic>?;
+      if (dataContainer == null || dataContainer['data'] == null) return [];
+      
+      final rawMeasurements = dataContainer['data'] as List;
+      final dateStr = dataContainer['date'] as String; // "2026-05-20" //Capire se serve avere la data
+
+      // Transform the list, keeping null values intact
+      return rawMeasurements.map<Map<String, dynamic>>((item) {
+        final String startTimeStr = item['time'];
+        final double durationMs = item['duration'];
+
+        String endTimeStr = startTimeStr; //In caso di errore allora non lo considera
+
+        try {
+          final timeParts = startTimeStr.split(':');
+          if (timeParts.length == 3) {
+            // Creiamo un DateTime fittizio usando la data dell'esercizio e l'orario di inizio
+            final dateParts = dateStr.split('-');
+            final startDateTime = DateTime(
+              int.parse(dateParts[0]), // Anno
+              int.parse(dateParts[1]), // Mese
+              int.parse(dateParts[2]), // Giorno
+              int.parse(timeParts[0]), // Ore
+              int.parse(timeParts[1]), // Minuti
+              int.parse(timeParts[2]), // Secondi
+            );
+
+            // Sommiamo la durata in millisecondi
+            final endDateTime = startDateTime.add(Duration(milliseconds: durationMs.toInt()));
+
+            // Formattiamo l'orario di fine come stringa "HH:mm:ss" aggiungendo lo zero iniziale se necessario
+            final hours = endDateTime.hour.toString().padLeft(2, '0');
+            final minutes = endDateTime.minute.toString().padLeft(2, '0');
+            final seconds = endDateTime.second.toString().padLeft(2, '0');
+            
+            endTimeStr = "$hours:$minutes:$seconds";
+          }
+        } catch (e) {
+          print("Error parsing exercise time: $e");
+        }
+
+        return {
+          'date': dateStr,
+          'time_start': startTimeStr,
+          'time_end': endTimeStr,
+        };
+      }).toList();
+    }
+    
+    throw Exception("Server error ${response.statusCode} on exercise data");
+  }
 
 
 

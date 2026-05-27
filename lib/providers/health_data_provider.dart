@@ -43,6 +43,7 @@ class HealthDataProvider extends ChangeNotifier {
       final dailyHR = await Impact.fetchDailyData("heart_rate", DateTime.now().subtract(const Duration(days: 1)));
       final dailySteps = await Impact.fetchDailyData("steps", DateTime.now().subtract(const Duration(days: 1)));
       final dailyCalories = await Impact.fetchDailyData("calories", DateTime.now().subtract(const Duration(days: 1)));
+      final dailyExcersise = await Impact.fetchDailyExcersiseData(DateTime.now().subtract(const Duration(days: 1)));
       
 
       _computeWeeklyRHR(weeklyRHR);
