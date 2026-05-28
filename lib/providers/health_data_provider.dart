@@ -37,16 +37,23 @@ class HealthDataProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-
       final weeklyRHR = await Impact.fetchWeeklyRestingHeartRate();
       final weeklySleep = await Impact.fetchWeeklySleepData(); 
       final dailyHR = await Impact.fetchDailyData("heart_rate", DateTime.now().subtract(const Duration(days: 1)));
       final dailySteps = await Impact.fetchDailyData("steps", DateTime.now().subtract(const Duration(days: 1)));
       final dailyCalories = await Impact.fetchDailyData("calories", DateTime.now().subtract(const Duration(days: 1)));
-      final dailyExcersise = await Impact.fetchDailyExcersiseData(DateTime.now().subtract(const Duration(days: 1)));
+      final dailyExercise = await Impact.fetchDailyExcersiseData(DateTime.now().subtract(const Duration(days: 1)));
       
 
       _computeWeeklyRHR(weeklyRHR);
+      _computeStressAndRecovery(
+        recentHeartRate: dailyHR,
+        recentSteps: dailySteps,
+        recentCalories: dailyCalories,
+        activeExercises: dailyExercise,
+        weeklySleep: weeklySleep,
+      );
+
       await _loadStreak();
 
       _hasHealthData = true;
@@ -105,7 +112,17 @@ class HealthDataProvider extends ChangeNotifier {
   // CALCOLO STRESS
   // ─────────────────────────────────────────────────────────────────────────
 
-  // IMPLEMENTARE _computeStress(
+  void _computeStressAndRecovery({
+    required List<Map<String, dynamic>>? recentHeartRate,
+    required List<Map<String, dynamic>>? recentSteps,
+    required List<Map<String, dynamic>>? recentCalories,
+    required List<Map<String, dynamic>>? activeExercises,
+    required List<Map<String, dynamic>>? weeklySleep,
+  }) {
+    const double sleepDurationMock = 450.0; //Dati per l'imputazione in caso manchino (7.5 ore in minuti)
+    const double sleepEfficiencyMock = 85.0;
+    const double basalCaloriesPerMinute = 1.2;
+  }
 
 
   // ─────────────────────────────────────────────────────────────────────────

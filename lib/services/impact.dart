@@ -87,7 +87,6 @@ class Impact{
   // ─────────────────────────────────────────────────────────────────────────
 
   // 1. RHR Settimanale
-
   static Future<List<Map<String, dynamic>>> fetchWeeklyRestingHeartRate() async {
     final yesterday = DateTime.now().subtract(const Duration(days: 1));
     final startDate = _formatDate(yesterday.subtract(const Duration(days: 6)));
@@ -184,21 +183,25 @@ class Impact{
 
     final url = "${Impact.baseUrl}${Impact.dataUrl}$dataType/patients/${Impact.patient}/day/$formattedDate/";
     final response = await _authenticatedGet(url);
-    if (response.statusCode == 404) return [];
+    if (response.statusCode == 404) return <Map<String, dynamic>>[];
     
     if (response.statusCode == 200) {
       final responseBody = jsonDecode(response.body);
+      final rawData = responseBody['data'];
+
+      if (rawData is List) return <Map<String, dynamic>>[]; //Gestisce caso in cui orologio non è stato usato
+
+      if (rawData == null) return <Map<String, dynamic>>[];
       
       // Access the inner 'data' map, and then the 'data' list inside it
-      final dataContainer = responseBody['data'] as Map<String, dynamic>?;
-      if (dataContainer == null || dataContainer['data'] == null) return [];
+      final dataContainer = rawData as Map<String, dynamic>;
+      if (dataContainer['data'] == null) return <Map<String, dynamic>>[];
       
       final rawMeasurements = dataContainer['data'] as List;
       //final dateStr = dataContainer['date'] as String; // "2026-05-20" //Capire se serve avere la data
 
       // Transform the list, keeping null values intact
       return rawMeasurements.map<Map<String, dynamic>>((item) {
-        // Safely extract the value without filtering out nulls
         final rawValue = item['value'];
         double? doubleValue;
 
@@ -233,10 +236,14 @@ class Impact{
     
     if (response.statusCode == 200) {
       final responseBody = jsonDecode(response.body);
-      
+      final rawData = responseBody['data'];
+
+      if (rawData is List) return <Map<String, dynamic>>[];
+      if (rawData == null) return <Map<String, dynamic>>[];
+
       // Access the inner 'data' map, and then the 'data' list inside it
-      final dataContainer = responseBody['data'] as Map<String, dynamic>?;
-      if (dataContainer == null || dataContainer['data'] == null) return [];
+      final dataContainer = rawData as Map<String, dynamic>;
+      if (dataContainer['data'] == null) return <Map<String, dynamic>>[];
       
       final rawMeasurements = dataContainer['data'] as List;
       final dateStr = dataContainer['date'] as String; // "2026-05-20" //Capire se serve avere la data
