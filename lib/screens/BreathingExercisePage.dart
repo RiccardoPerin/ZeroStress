@@ -213,7 +213,7 @@ class _BreathingExercisePageState extends State<BreathingExercisePage> with Tick
                     const Text(
                       "EXERCISE COMPLETED",
                       style: TextStyle(
-                        fontSize: 22, 
+                        fontSize: 20, 
                         fontWeight: FontWeight.bold, 
                         letterSpacing: 1.0
                       ),

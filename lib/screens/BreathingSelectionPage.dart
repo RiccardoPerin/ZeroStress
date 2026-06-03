@@ -104,7 +104,7 @@ class _BreathingSelectionPageState extends State<BreathingSelectionPage> {
 
   void _showTechniqueDialog(BuildContext context, BreathingTechnique technique) {
     final provider = Provider.of<UserProvider>(context, listen: false);
-    final totalCtrl = TextEditingController(text: provider.time.toString()); //Time shown at the beginning
+    final totalCtrl = TextEditingController(text: '5'); //Time shown at the beginning
 
     showDialog(
       context: context,
