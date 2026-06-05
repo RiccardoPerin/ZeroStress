@@ -34,16 +34,17 @@ class HealthDataProvider extends ChangeNotifier {
   Future<void> fetchAllData() async {
     _isLoading = true;
     _errorMessage = null;
+    await _loadStreak();
     notifyListeners();
 
     try {
       final weeklyRHR = await Impact.fetchWeeklyRestingHeartRate();
-      final weeklySleep = await Impact.fetchWeeklySleepData(); 
+      final weeklySleep = await Impact.fetchWeeklySleepData();
       final dailyHR = await Impact.fetchDailyData("heart_rate", DateTime.now().subtract(const Duration(days: 1)));
       final dailySteps = await Impact.fetchDailyData("steps", DateTime.now().subtract(const Duration(days: 1)));
       final dailyCalories = await Impact.fetchDailyData("calories", DateTime.now().subtract(const Duration(days: 1)));
       final dailyExercise = await Impact.fetchDailyExcersiseData(DateTime.now().subtract(const Duration(days: 1)));
-      
+
 
       _computeWeeklyRHR(weeklyRHR);
       _computeStressAndRecovery(
@@ -53,8 +54,6 @@ class HealthDataProvider extends ChangeNotifier {
         activeExercises: dailyExercise,
         weeklySleep: weeklySleep,
       );
-
-      await _loadStreak();
 
       _hasHealthData = true;
     } catch (e) {
@@ -134,6 +133,15 @@ class HealthDataProvider extends ChangeNotifier {
     _currentStreak = sp.getInt('streak_count') ?? 0;
 
     final today = DateTime.now();
+    final todayDone = sp.getBool('streak_day_${_dateKey(today)}') ?? false;
+    final yesterday = today.subtract(const Duration(days: 1));
+    final yesterdayDone = sp.getBool('streak_day_${_dateKey(yesterday)}') ?? false;
+    
+    if (!yesterdayDone && !todayDone) {
+      _currentStreak = 0;
+      await sp.setInt('streak_count', _currentStreak);
+    }
+
     final List<bool> completed = List.filled(7, false);
     for (int i = 6; i >= 0; i--) {
       final day = today.subtract(Duration(days: i));
@@ -163,6 +171,7 @@ class HealthDataProvider extends ChangeNotifier {
     await sp.setInt(key, updated);
 
     if (updated >= goalMinutes) {
+      //final todayDone = sp.setBool('todayDone', true);
       await markTodayAsCompleted();
     }
 
@@ -179,12 +188,11 @@ class HealthDataProvider extends ChangeNotifier {
     await sp.setBool(key, true);
 
     final yesterday = today.subtract(const Duration(days: 1));
-    final yesterdayDone =
-        sp.getBool('streak_day_${_dateKey(yesterday)}') ?? false;
-
-    if (yesterdayDone || _currentStreak == 0) {
+    final yesterdayDone = sp.getBool('streak_day_${_dateKey(yesterday)}') ?? false;
+    if (yesterdayDone || _currentStreak==0) {
       _currentStreak++;
-    } else {
+    }
+    else {
       _currentStreak = 1;
     }
 

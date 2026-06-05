@@ -146,42 +146,32 @@ class _BreathingExercisePageState extends State<BreathingExercisePage> with Tick
 
   void _startTimer() {
     _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      setState(() {
-        if (totalTimeInSeconds > 1) { // non >0 così non ho il secondo di attesa
-          totalTimeInSeconds--;
-        } else {
-          // Quando manca solo 1 secondo (che sta per scadere ora), azzeriamo il timer visivo e fermiamo tutto immediatamente.
-          totalTimeInSeconds = 0;
-          _timerFinished();
-        }
-      });
+      if (totalTimeInSeconds > 1) {
+        setState(() => totalTimeInSeconds--);
+      } else {
+        setState(() => totalTimeInSeconds = 0);
+        _timerFinished();
+      }
     });
   }
 
-  void _timerFinished() {
+  Future<void> _timerFinished() async {
+    _countdownTimer?.cancel();
+    _preStartTimer?.cancel();
     setState(() {
-      _countdownTimer?.cancel();
-      _preStartTimer?.cancel();
-      
       _breathController.stop();
-      _breathController.value = 0.0; 
-      
+      _breathController.value = 0.0;
       isPlaying = false;
       isCountingDown = false;
       _stopBtnController.reset();
-
-      finalBpm = (initialBpm > 50) ? initialBpm - 5 : initialBpm; // da aggiornare
+      finalBpm = (initialBpm > 50) ? initialBpm - 5 : initialBpm;
     });
 
     final minutesCompleted = widget.totalTimeInSeconds ~/ 60;
-    final userProvider =
-        Provider.of<UserProvider>(context, listen: false);
-    final healthProvider =
-        Provider.of<HealthDataProvider>(context, listen: false);
-    
-    healthProvider.addBreathingMinutes(
-        minutesCompleted, userProvider.time);
-    //Da aggiungere notifiche
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final healthProvider = Provider.of<HealthDataProvider>(context, listen: false);
+
+    await healthProvider.addBreathingMinutes(minutesCompleted, userProvider.time);
 
     _showCompletionDialog();
   }
