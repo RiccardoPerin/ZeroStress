@@ -193,6 +193,7 @@ class _HomePageState extends State<HomePage> {
 
   Widget _buildStreakBox(HealthDataProvider health) {
     const days = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+    final todayIndex = DateTime.now().weekday - 1; // 0=Mon, 6=Sun
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
@@ -226,6 +227,7 @@ class _HomePageState extends State<HomePage> {
               final done = i < health.last7DaysCompleted.length
                   ? health.last7DaysCompleted[i]
                   : false;
+              final isToday = i == todayIndex;
               return Column(
                 children: [
                   Container(
@@ -237,8 +239,12 @@ class _HomePageState extends State<HomePage> {
                           ? Colors.orangeAccent
                           : Colors.white.withOpacity(0.2),
                       border: Border.all(
-                        color: done ? Colors.orangeAccent : Colors.white38,
-                        width: 2,
+                        color: done
+                            ? Colors.orangeAccent
+                            : isToday
+                                ? Colors.orangeAccent
+                                : Colors.white38,
+                        width: isToday && !done ? 3 : 2,
                       ),
                     ),
                     child: Center(
@@ -596,7 +602,7 @@ class _HomePageState extends State<HomePage> {
             leftTitles: AxisTitles(
               sideTitles: SideTitles(
                 showTitles: true,
-                interval: 10,
+                interval: 10, 
                 reservedSize: 30,
                 getTitlesWidget: (value, meta) => Text(
                   value.toInt().toString(),

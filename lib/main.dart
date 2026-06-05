@@ -1,4 +1,5 @@
 import 'package:ZeroStress/providers/health_data_provider.dart';
+import 'package:ZeroStress/providers/polar_provider.dart';
 import 'package:ZeroStress/providers/user_provider.dart';
 import 'screens/HomePage.dart';
 import 'screens/onBoardingPage.dart';
@@ -17,6 +18,7 @@ void main () async {
       providers: [
         ChangeNotifierProvider(create: (context) => userProvider),
         ChangeNotifierProvider(create: (context) => HealthDataProvider()),
+        ChangeNotifierProvider(create: (context) => PolarProvider()),
       ],
       child: const MyApp(),
     ),
