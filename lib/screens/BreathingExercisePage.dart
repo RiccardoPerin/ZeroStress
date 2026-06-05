@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:math';
+import 'package:ZeroStress/providers/polar_provider.dart';
 import 'package:flutter/material.dart';
 import 'BreathingSelectionPage.dart';
 import 'package:provider/provider.dart';
@@ -40,21 +41,24 @@ class _BreathingExercisePageState extends State<BreathingExercisePage> with Tick
   Timer? _preStartTimer;       
 
   // Variabili per il battito cardiaco
-  int currentBpm = 62; 
   int initialBpm = 0; // Salvato all'inizio dell'esercizio
   int finalBpm = 0;   // Calcolato alla fine dell'esercizio
 
-  // --- CONTROLLER ANIMAZIONI ---
+  // --- CONTROLLER ANIMAZIONI E PROVIDER ---
   late AnimationController _breathController;
   late AnimationController _stopBtnController;
   late AnimationController _heartbeatController; 
-
-  // --- SEQUENZE DI ANIMAZIONE (Cuore e Ombra) ---
   late Animation<double> _heartScale;
+  
+  // Variabile per salvare il riferimento al provider ed evitare errori nel dispose
+  late PolarProvider _polarProvider; 
 
   @override
   void initState() {
     super.initState();
+
+    // Salviamo il provider in modo sicuro
+    _polarProvider = context.read<PolarProvider>();
 
     //Legge le fasi dalla technique scelta
     final p = widget.technique.phases;
@@ -94,7 +98,13 @@ class _BreathingExercisePageState extends State<BreathingExercisePage> with Tick
       TweenSequenceItem(tween: Tween(begin: 1.3, end: 1.0).chain(CurveTween(curve: Curves.easeIn)), weight: 15),
       TweenSequenceItem(tween: ConstantTween(1.0), weight: 70), 
     ]).animate(_heartbeatController);
+
+    // Connessione istantanea all'apertura della pagina
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _polarProvider.connect();
+    });
   }
+
 
   @override
   void dispose() {
@@ -103,6 +113,10 @@ class _BreathingExercisePageState extends State<BreathingExercisePage> with Tick
     _breathController.dispose();
     _stopBtnController.dispose();
     _heartbeatController.dispose();
+    
+    // Disconnessione sicura usando la variabile salvata
+    _polarProvider.disconnect();
+    
     super.dispose();
   }
 
@@ -124,7 +138,7 @@ class _BreathingExercisePageState extends State<BreathingExercisePage> with Tick
         // Pressione di START
         isCountingDown = true;
         preStartCountdown = 3;
-        initialBpm = currentBpm; 
+        initialBpm = _polarProvider.latestHr ?? 0;
         
         _preStartTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
           setState(() {
@@ -156,15 +170,18 @@ class _BreathingExercisePageState extends State<BreathingExercisePage> with Tick
   }
 
   Future<void> _timerFinished() async {
-    _countdownTimer?.cancel();
-    _preStartTimer?.cancel();
     setState(() {
+      _countdownTimer?.cancel();
+      _preStartTimer?.cancel();
+
       _breathController.stop();
       _breathController.value = 0.0;
+
       isPlaying = false;
       isCountingDown = false;
       _stopBtnController.reset();
-      finalBpm = (initialBpm > 50) ? initialBpm - 5 : initialBpm;
+
+      finalBpm = _polarProvider.latestHr ?? 0;
     });
 
     final minutesCompleted = widget.totalTimeInSeconds ~/ 60;
@@ -191,16 +208,16 @@ class _BreathingExercisePageState extends State<BreathingExercisePage> with Tick
               mainAxisSize: MainAxisSize.min, // Adatta l'altezza al contenuto, evitando spazi vuoti
               children: [
                 // RIGA INTESTAZIONE
-                Row(
+                const Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.check_circle_rounded, 
                       color: Colors.green, 
                       size: 35 // Icona più piccola
                     ),
                     
-                    const Text(
+                    Text(
                       "EXERCISE COMPLETED",
                       style: TextStyle(
                         fontSize: 20, 
@@ -273,7 +290,7 @@ class _BreathingExercisePageState extends State<BreathingExercisePage> with Tick
                   child: ElevatedButton(
                     onPressed: () {
                       _resetExercise(); 
-                      Navigator.of(context).popUntil((route) => route.isFirst); //Goes back to HomePage 
+                      Navigator.of(context).popUntil((route) => route.isFirst); // Il pop attiverà il dispose() e disconnetterà il Polar
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Theme.of(context).colorScheme.primary,
@@ -541,37 +558,81 @@ class _BreathingExercisePageState extends State<BreathingExercisePage> with Tick
   }
 
   Widget _buildBpmIndicator() {
-    return AnimatedBuilder(
-      animation: _heartbeatController,
-      builder: (context, child) {
-        return Container(
-          padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
-          decoration: BoxDecoration(
-            color: const Color(0xFFF5F5F5), 
-            borderRadius: BorderRadius.circular(30),
-            border: Border.all(color: Colors.black, width: 1.5), 
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Transform.scale(
-                scale: _heartScale.value,
-                child: const Icon(Icons.favorite, color: Colors.redAccent, size: 28),
+    final polarProvider = context.watch<PolarProvider>();
+    final bpmText = polarProvider.latestHr != null
+        ? '${polarProvider.latestHr} BPM'
+        : '-- BPM';
+
+    final state = polarProvider.connectionState;
+    final Color dotColor;
+    final String dotLabel;
+    switch (state) {
+      case PolarConnectionState.connected:
+        dotColor = Colors.green;
+        dotLabel = 'Connected';
+      case PolarConnectionState.connecting:
+        dotColor = Colors.orangeAccent;
+        dotLabel = 'Connecting...';
+      case PolarConnectionState.error:
+        dotColor = Colors.redAccent;
+        dotLabel = 'Error';
+      case PolarConnectionState.disconnected:
+        dotColor = Colors.grey;
+        dotLabel = 'Disconnected';
+    }
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 8,
+              height: 8,
+              decoration: BoxDecoration(color: dotColor, shape: BoxShape.circle),
+            ),
+            const SizedBox(width: 6),
+            Text(
+              dotLabel,
+              style: TextStyle(fontSize: 12, color: dotColor, fontWeight: FontWeight.w500),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        AnimatedBuilder(
+          animation: _heartbeatController,
+          builder: (context, child) {
+            return Container(
+              padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF5F5F5),
+                borderRadius: BorderRadius.circular(30),
+                border: Border.all(color: Colors.black, width: 1.5),
               ),
-              const SizedBox(width: 15),
-              Text(
-                "$currentBpm BPM",
-                style: const TextStyle(
-                  color: Colors.black87,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 1.2,
-                ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Transform.scale(
+                    scale: _heartScale.value,
+                    child: const Icon(Icons.favorite, color: Colors.redAccent, size: 28),
+                  ),
+                  const SizedBox(width: 15),
+                  Text(
+                    bpmText,
+                    style: const TextStyle(
+                      color: Colors.black87,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 1.2,
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
-        );
-      },
+            );
+          },
+        ),
+      ],
     );
   }
 }
