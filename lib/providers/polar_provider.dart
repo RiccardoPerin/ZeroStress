@@ -16,15 +16,21 @@ class PolarProvider extends ChangeNotifier {
 
   StreamSubscription? _hrSubscription;
 
-  // initialization of providers
   PolarProvider() {
+    _polar.deviceConnecting.listen((_) {
+      _connectionState = PolarConnectionState.connecting;
+      notifyListeners();
+    });
+
     _polar.deviceConnected.listen((_) {
       _connectionState = PolarConnectionState.connected;
       notifyListeners();
     });
 
-    _polar.deviceDisconnected.listen((_) {
-      _connectionState = PolarConnectionState.disconnected;
+    _polar.deviceDisconnected.listen((event) {
+      _connectionState = event.pairingError
+          ? PolarConnectionState.error
+          : PolarConnectionState.disconnected;
       _latestHr = null;
       _hrSubscription?.cancel();
       notifyListeners();
@@ -38,9 +44,8 @@ class PolarProvider extends ChangeNotifier {
   }
 
   Future<void> connect() async {
-    _connectionState = PolarConnectionState.connecting;
-    notifyListeners();
-    
+    if (_connectionState == PolarConnectionState.connected) return;
+
     try {
       await _polar.connectToDevice(_polarId);
     } catch (_) {
@@ -55,7 +60,7 @@ class PolarProvider extends ChangeNotifier {
       (data) {
         if (data.samples.isNotEmpty) {
           _latestHr = data.samples.last.hr;
-          notifyListeners(); 
+          notifyListeners();
         }
       },
     );
@@ -63,14 +68,10 @@ class PolarProvider extends ChangeNotifier {
 
   void disconnect() {
     _hrSubscription?.cancel();
-    _connectionState = PolarConnectionState.disconnected;
     _latestHr = null;
-    
-    // Ritardiamo la notifica di un istante impercettibile per farle saltare il blocco del "dispose"
-    Future.microtask(() {
-      notifyListeners();
-    });
-    
+    _connectionState = PolarConnectionState.disconnected;
+    Future.microtask(notifyListeners);
+
     try {
       _polar.disconnectFromDevice(_polarId);
     } catch (_) {}
