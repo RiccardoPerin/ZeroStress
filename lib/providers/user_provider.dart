@@ -28,6 +28,26 @@ class UserProvider extends ChangeNotifier {
     _isLoggedIn = prefs.getBool('is_logged_in') ?? false;
 
     _hasDoneOnboarding = prefs.getBool('has_done_onboarding') ?? false;
+
+    // Se risultiamo loggati da una sessione precedente, verifichiamo che la
+    // sessione sia ancora valida provando a rinnovare i token.
+    if (_isLoggedIn) {
+      final refresh = prefs.getString('refresh');
+      int? statusCode;
+      if (refresh != null) {
+        try {
+          statusCode = await Impact.refreshTokens(refresh);
+        } catch (e) {
+          statusCode = null;
+        }
+      }
+
+      if (statusCode != 200) {
+        _isLoggedIn = false;
+        await prefs.setBool('is_logged_in', false);
+      }
+    }
+
     notifyListeners(); // Avvisa l'app che i dati sono pronti
   }
 
@@ -67,6 +87,8 @@ class UserProvider extends ChangeNotifier {
       if (statusCode == 200) {
         // I token sono già stati salvati da impact.dart
         _isLoggedIn = true;
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setBool('is_logged_in', true);
         notifyListeners(); // Avvisa la UI di cambiare pagina
         return null; // Nessun errore
       } else {
@@ -125,7 +147,7 @@ class UserProvider extends ChangeNotifier {
 
   Future<void> logout() async {
     _isLoggedIn = false;
-    // Non resettiamo tutto, ma solo lo stato di login se vuoi mantenere i dati
+    // Non resettiamo tutto, ma solo lo stato di login per mantenere i dati
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('is_logged_in', false);
     notifyListeners();
