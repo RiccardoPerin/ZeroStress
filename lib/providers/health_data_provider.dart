@@ -142,11 +142,14 @@ class HealthDataProvider extends ChangeNotifier {
       await sp.setInt('streak_count', _currentStreak);
     }
 
+    // I pallini mostrano solo la settimana corrente (Lun=0 … Dom=6):
+    // si azzerano visivamente ogni lunedì, anche se lo streak continua a contare
+    // weekday assegna 1=Lunedì, 2=Martedì e così via, sottraendo da oggi il numero meno 1 arrivo sempre a lunedì
+    final mondayOfThisWeek = today.subtract(Duration(days: today.weekday - 1));
     final List<bool> completed = List.filled(7, false);
-    for (int i = 6; i >= 0; i--) {
-      final day = today.subtract(Duration(days: i));
-      final idx = day.weekday - 1; // Mon=0 … Sun=6
-      completed[idx] = sp.getBool('streak_day_${_dateKey(day)}') ?? false;
+    for (int i = 0; i < 7; i++) {
+      final day = mondayOfThisWeek.add(Duration(days: i));
+      completed[i] = sp.getBool('streak_day_${_dateKey(day)}') ?? false;
     }
     _last7DaysCompleted = completed;
   }
