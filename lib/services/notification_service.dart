@@ -48,7 +48,7 @@ class NotificationService {
       hour: 7,
       minute: 0,
       title: 'Good morning! ☀️',
-      body: 'Start the day with a good breathing section and check how much you recovered during your sleep!'
+      body: 'Start the day with a good breathing session and check how much you recovered during your sleep!'
     );
 
     await _scheduleDaily(
@@ -56,7 +56,7 @@ class NotificationService {
       hour: 21,
       minute: 0, 
       title: 'Evening check-in 💤',
-      body: 'Wind down before going to sleep, let''s do some breathing'
+      body: "Wind down before going to sleep. Let's do some breathing!"
     );
   }
 

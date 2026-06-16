@@ -15,6 +15,7 @@ void main () async {
   await userProvider.loadUser(); // Carica i dati prima di far partire l'app
 
   await NotificationService.instance.init();
+  GoogleFonts.config.allowRuntimeFetching = false;
 
   runApp(
     MultiProvider(

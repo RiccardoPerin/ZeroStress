@@ -14,6 +14,8 @@ class _SettingPageState extends State<SettingPage> {
   late TextEditingController nameController;
   late TextEditingController heightController;
   late TextEditingController weightController;
+  late TextEditingController ageController;
+  late String genderController;
   late TextEditingController timeController;
   double _currentSliderValue = 5;
   bool _forcePop = false; //Variabile necessaria per far si che possa tornare indietro dopo premere Save 
@@ -29,6 +31,8 @@ class _SettingPageState extends State<SettingPage> {
     nameController = TextEditingController(text: provider.name);
     heightController = TextEditingController(text: provider.height > 0 ? provider.height.toString() : "");
     weightController = TextEditingController(text: provider.weight > 0 ? provider.weight.toString() : "");
+    ageController = TextEditingController(text: provider.age > 0 ? provider.age.toString() : "");
+    genderController = provider.gender;
     _currentSliderValue = provider.time > 0 ? provider.time.toDouble() : 5.0;
   }
 
@@ -63,6 +67,8 @@ class _SettingPageState extends State<SettingPage> {
       nameController.text,
       heightController.text,
       weightController.text,
+      ageController.text,
+      genderController,
       _currentSliderValue
     );
 
@@ -188,7 +194,7 @@ class _SettingPageState extends State<SettingPage> {
                     child: Column(
                       children: [
 
-                        _buildPersonalInfo(context), 
+                        _buildPersonalInfo(context),
 
                         const SizedBox(height: 20),
 
@@ -196,7 +202,7 @@ class _SettingPageState extends State<SettingPage> {
 
                         const SizedBox(height: 20),
 
-                        _buildDangerZone(context)
+                        _buildDangerZone(context),
 
                       ]
                     ),
@@ -318,6 +324,67 @@ class _SettingPageState extends State<SettingPage> {
               )
             ],
           ),
+
+          const SizedBox(height: 20),
+
+          Row(
+            children: [
+              Expanded(
+              child: DropdownButtonFormField<String>(
+                initialValue: genderController,
+                dropdownColor: Colors.white,
+                borderRadius: BorderRadius.circular(20.0),
+                icon: const Icon(Icons.arrow_drop_down_outlined),
+                style: const TextStyle(color: Colors.black87, fontSize: 16),
+                decoration: InputDecoration(
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0), 
+                  prefixIcon: const Icon(Icons.person_outline),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(20.0),
+                    borderSide: const BorderSide(color: Colors.grey, width: 1.0),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(20.0),
+                    borderSide: BorderSide(color: Theme.of(context).colorScheme.primary, width: 2.0),
+                  ),
+                  labelText: 'Sex',
+                  labelStyle: const TextStyle(color: Colors.grey), // Testo a riposo
+                  floatingLabelStyle: floatingStyleRule,
+                ),
+                items: ['Male', 'Female']
+                    .map((s) => DropdownMenuItem(value: s, child: Text(s)))
+                    .toList(),
+                onChanged: (value) {
+                  genderController = value!;
+                },
+              ),
+            ),
+                  
+              const SizedBox(width: 20),
+
+              Expanded(
+                child:
+                TextField(
+                  controller: ageController,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: false),
+                  decoration: InputDecoration(
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(20.0),
+                      borderSide: const BorderSide(color: Colors.grey, width: 1.0),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(20.0),
+                      borderSide: BorderSide(color: Theme.of(context).colorScheme.primary, width: 2.0),
+                    ),
+                    labelText: 'Age',
+                    labelStyle: const TextStyle(color: Colors.grey), // Testo a riposo
+                    floatingLabelStyle: floatingStyleRule,
+                    prefixIcon: const Icon(Icons.elderly_outlined)
+                  ),
+                ),
+              )
+            ],
+          ),
         ],
       ),
     );
@@ -397,6 +464,8 @@ class _SettingPageState extends State<SettingPage> {
             nameController.text,
             heightController.text,
             weightController.text,
+            ageController.text,
+            genderController,
             _currentSliderValue
           );
 

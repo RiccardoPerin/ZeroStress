@@ -12,6 +12,8 @@ class _OnBoardingPageState extends State<OnBoardingPage> {
   final TextEditingController nameController = TextEditingController();
   final TextEditingController heightController = TextEditingController();
   final TextEditingController weightController = TextEditingController();
+  final TextEditingController ageController = TextEditingController();
+  String genderController = "";
   double _currentSliderValue = 5.0;
 
   @override
@@ -37,7 +39,7 @@ class _OnBoardingPageState extends State<OnBoardingPage> {
               _buildOnBoardingMessage(),
               const SizedBox(height: 40),
               _buildPersonalFields(),
-              const SizedBox(height: 20),
+              const SizedBox(height: 10),
               _buildTimeSelector(),
               const SizedBox(height: 60),
               _buildEnterButton()
@@ -129,7 +131,7 @@ class _OnBoardingPageState extends State<OnBoardingPage> {
           ),
         ),
 
-        const SizedBox(height: 20),
+        const SizedBox(height: 10),
 
         Row(
           children: [
@@ -161,6 +163,52 @@ class _OnBoardingPageState extends State<OnBoardingPage> {
                   hintText: 'Kg',
                   labelText: 'Weight',
                   prefixIcon: Icon(Icons.monitor_weight_outlined)
+                ),
+              ),
+            ),
+          ],
+        ),
+        
+        const SizedBox(height: 10),
+
+        Row(
+          children: [
+            Expanded(
+              child: DropdownButtonFormField<String>(
+                dropdownColor: Colors.white,
+                borderRadius: BorderRadius.circular(20.0),
+                icon: const Icon(Icons.arrow_drop_down_outlined),
+                style: const TextStyle(color: Colors.black87, fontSize: 16),
+                decoration: InputDecoration(
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0), // Più respiro all'interno
+                  prefixIcon: const Icon(Icons.person_outline),
+                  hintText: 'Sex',
+                  hintStyle: TextStyle(color: Colors.grey[500]),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(20.0),
+                  ),
+                ),
+                items: ['Male', 'Female']
+                    .map((s) => DropdownMenuItem(value: s, child: Text(s)))
+                    .toList(),
+                onChanged: (value) {
+                  genderController = value!;
+                },
+              ),
+            ),
+            
+            const SizedBox(width: 20),
+
+            Expanded(
+              child:TextField(
+                controller: ageController,
+                keyboardType: TextInputType.numberWithOptions(decimal: false),
+                decoration: InputDecoration(
+                  border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(20.0)
+                  ),
+                  labelText: 'Age',
+                  prefixIcon: Icon(Icons.elderly_outlined)
                 ),
               ),
             ),
@@ -241,6 +289,8 @@ class _OnBoardingPageState extends State<OnBoardingPage> {
               nameController.text,
               heightController.text,
               weightController.text,
+              ageController.text,
+              genderController,
               _currentSliderValue
             ); 
 

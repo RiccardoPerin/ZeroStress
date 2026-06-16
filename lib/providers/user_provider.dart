@@ -7,12 +7,16 @@ class UserProvider extends ChangeNotifier {
   bool _isLoggedIn = false;
   int _height = 0;
   double _weight = 0.0;
+  int _age = 0;
+  String _gender = "";
   bool _hasDoneOnboarding = false;
   int _time = 0;
 
   String get name => _name;
   int get height => _height;
   double get weight => _weight;
+  int get age => _age;
+  String get gender => _gender;
   bool get isLoggedIn => _isLoggedIn;
   bool get hasDoneOnboarding => _hasDoneOnboarding;
   int get time => _time;
@@ -24,6 +28,8 @@ class UserProvider extends ChangeNotifier {
 
     _height = int.tryParse(prefs.getString('user_height') ?? "0") ?? 0;
     _weight = double.tryParse(prefs.getString('user_weight') ?? "0.0") ?? 0.0;
+    _age = int.tryParse(prefs.getString('user_age') ?? "0") ?? 0;
+    _gender = prefs.getString('user_gender') ?? "";
     _time = prefs.getInt('user_time') ?? 0;
     _isLoggedIn = prefs.getBool('is_logged_in') ?? false;
 
@@ -52,8 +58,9 @@ class UserProvider extends ChangeNotifier {
   }
 
   // Logica per OnBoarding
-  Future<String?> completeOnboarding(String name, String heightString, String weightString, double initialTime) async {
+  Future<String?> completeOnboarding(String name, String heightString, String weightString, String ageString, String gender, double initialTime) async {
     if (name.trim().isEmpty) return "Your name cannot be empty";
+    if (gender.isEmpty) return "Select a gender";
     
     int? h = int.tryParse(heightString);
     if (h == null || h <= 0) return "Invalid height";
@@ -61,9 +68,14 @@ class UserProvider extends ChangeNotifier {
     double? w = double.tryParse(weightString.replaceAll(',', '.'));
     if (w == null || w <= 0) return "Invalid weight";
 
+    int? age = int.tryParse(ageString);
+    if (age == null || age <= 0) return "Invalid age";
+
     _name = name;
     _height = h;
     _weight = w;
+    _age = age;
+    _gender = gender;
     _hasDoneOnboarding = true;
     _time = initialTime.toInt();
 
@@ -71,12 +83,13 @@ class UserProvider extends ChangeNotifier {
     await prefs.setString('user_name', _name);
     await prefs.setString('user_height', _height.toString());
     await prefs.setString('user_weight', _weight.toString());
+    await prefs.setString('user_age', _age.toString());
+    await prefs.setString('user_gender', _gender);
     await prefs.setBool('has_done_onboarding', true);
     await prefs.setInt('user_time', _time);
 
     notifyListeners();
     return null;
-
   }
 
   Future<String?> login(String username, String password) async {
@@ -93,16 +106,16 @@ class UserProvider extends ChangeNotifier {
         return null; // Nessun errore
       } else {
         // Se lo status code non è 200 (es. 401 Unauthorized)
-        return "Username o password errati!";
+        return "Wrong sername or password!";
       }
     } catch (e) {
       // Se c'è un problema di rete (es. no internet) catch intercetta l'errore
-      return "Errore di connessione al server. Riprova.";
+      return "Server connection error. Try again later.";
     }
   }
 
-  // funzione per CONTROLLARE e AGGIORNARE nome, peso, altezza su settings
-  Future<bool> updateProfile(String newName, String heightString, String weightString, double sliderValue) async {
+  // funzione per CONTROLLARE e AGGIORNARE nome, peso, altezza ed età su settings
+  Future<bool> updateProfile(String newName, String heightString, String weightString, String ageString, String gender, double sliderValue) async {
     
     // 1. Pulizia dei dati in ingresso
     String cleanName = newName.trim(); // Rimuove eventuali spazi vuoti prima e dopo
@@ -112,6 +125,7 @@ class UserProvider extends ChangeNotifier {
     int? parsedHeight = int.tryParse(heightString);
     double? parsedWeight = double.tryParse(cleanWeight);
     int? parsedTime = sliderValue.toInt();
+    int? parsedAge = int.tryParse(ageString);
 
     // 2. Controlli di Validazione
     if (cleanName.isEmpty) {
@@ -126,17 +140,25 @@ class UserProvider extends ChangeNotifier {
       return false; // Il peso deve essere un numero maggiore di 0
     }
 
+    if (parsedAge == null || parsedAge <= 0) {
+      return false; // L'età deve essere un numero maggiore di 0
+    }
+
     // Se arriviamo qui, tutti i controlli sono passati! Aggiorniamo lo stato.
     _name = cleanName;
     _height = parsedHeight;
     _weight = parsedWeight;
+    _age = parsedAge;
     _time = parsedTime;
+    _gender = gender;
 
     // 4. Salviamo i dati sul dispositivo
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('user_name', _name);
     await prefs.setString('user_height', _height.toString());
     await prefs.setString('user_weight', _weight.toString());
+    await prefs.setString('user_age', _age.toString());
+    await prefs.setString('user_gender', _gender);
     await prefs.setInt('user_time', _time);
 
     // 5. Avvisiamo l'app per aggiornare le schermate
@@ -162,6 +184,8 @@ class UserProvider extends ChangeNotifier {
     _height = 0;
     _weight = 0.0;
     _time = 0;
+    _age = 0;
+    _gender = "";
     _isLoggedIn = false;
     _hasDoneOnboarding = false;
     
