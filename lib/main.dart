@@ -1,6 +1,7 @@
 import 'package:ZeroStress/providers/health_data_provider.dart';
 import 'package:ZeroStress/providers/polar_provider.dart';
 import 'package:ZeroStress/providers/user_provider.dart';
+import 'package:ZeroStress/services/notification_service.dart';
 import 'screens/HomePage.dart';
 import 'screens/onBoardingPage.dart';
 import 'package:flutter/material.dart';
@@ -12,6 +13,8 @@ void main () async {
   WidgetsFlutterBinding.ensureInitialized();
   final userProvider = UserProvider();
   await userProvider.loadUser(); // Carica i dati prima di far partire l'app
+
+  await NotificationService.instance.init();
 
   runApp(
     MultiProvider(

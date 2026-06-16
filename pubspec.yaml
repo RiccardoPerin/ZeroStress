@@ -17,6 +17,9 @@ dependencies:
   fl_chart: ^1.2.0
   http: 
   polar: ^6.0.0
+  flutter_local_notifications: 
+  timezone:
+  flutter_timezone:
 
 dev_dependencies:
   flutter_test:
