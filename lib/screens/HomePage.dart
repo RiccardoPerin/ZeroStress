@@ -116,7 +116,7 @@ class _HomePageState extends State<HomePage> {
                             // TODAY STRESS & RECOVERY (Due box affiancati)
                             Row(
                               children: [
-                                Expanded(child: _buildSmallStatCardIncreasingValue("Today Stress", 30.0)), // ("Today Stress",health.stressLevel)
+                                Expanded(child: _buildSmallStatCardIncreasingValue("Today Stress", health.stressLevel)), // ("Today Stress",health.stressLevel)
                                 const SizedBox(width: 15),
                                 Expanded(child: _buildSmallStatCardDecreasingValue("Recovery", 80))
                               ],
