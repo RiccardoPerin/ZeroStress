@@ -115,9 +115,10 @@ class Impact{
         final date = item['date'] as String;
         
         // Controlliamo se il giorno è presente nel nostro range e se ha un valore valido
-        if (weeklyMap.containsKey(date) && item['data'] != null && item['data']['value'] != null) {
+        if (weeklyMap.containsKey(date) && item['data'].isNotEmpty) {
           weeklyMap[date] = (item['data']['value'] as num).toDouble();
         }
+        
       }
 
       return weeklyMap.entries
@@ -143,7 +144,7 @@ class Impact{
       sleepMap[dateStr] = null;
     }
     
-    final url = "${Impact.baseUrl}${Impact.dataUrl}resting_heart_rate/patients/${Impact.patient}"
+    final url = "${Impact.baseUrl}${Impact.dataUrl}sleep/patients/${Impact.patient}"
         "/daterange/start_date/$startDate/end_date/$endDate/";
 
     final response = await _authenticatedGet(url);
@@ -159,7 +160,7 @@ class Impact{
         final date = item['date'] as String;
         
         // Controlliamo se il giorno è presente nel nostro range e se ha un valore valido
-        if (sleepMap.containsKey(date) && item['data'] != null && item['data']['duration'] != null) {
+        if (sleepMap.containsKey(date) && item['data'].isNotEmpty) {
           final duration = item['data']['duration'];
           sleepMap[date] = duration.toDouble();
         }
