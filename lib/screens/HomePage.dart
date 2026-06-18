@@ -116,9 +116,9 @@ class _HomePageState extends State<HomePage> {
                             // TODAY STRESS & RECOVERY (Due box affiancati)
                             Row(
                               children: [
-                                Expanded(child: _buildSmallStatCardIncreasingValue("Today Stress", health.stressLevel)), // ("Today Stress",health.stressLevel)
+                                Expanded(child: _buildSmallStatCardIncreasingValue("Today's Stress", health.stressLevel)), // ("Today Stress",health.stressLevel)
                                 const SizedBox(width: 15),
-                                Expanded(child: _buildSmallStatCardDecreasingValue("Recovery", 80))
+                                Expanded(child: _buildSmallStatCardDecreasingValue("Today's Recovery", health.recoveryLevel))
                               ],
                             ),
 
@@ -128,7 +128,7 @@ class _HomePageState extends State<HomePage> {
                             _buildRHRChartCard("Resting HR Trend", health),
                             const SizedBox(height: 10),
 
-                            _buildDailyGoalCard("Daily Goal", userProvider.time.toDouble(), _todayBreathingMinutes.toDouble())
+                            _buildDailyGoalCard("Your Daily Goal", userProvider.time.toDouble(), _todayBreathingMinutes.toDouble())
                           ]
                         );
                       }
@@ -192,7 +192,9 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildStreakBox(HealthDataProvider health) {
-    const days = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+    String d = 'Days';
+    if (health.currentStreak == 1) d = 'Day';
+    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
     final todayIndex = DateTime.now().weekday - 1; // 0=Mon, 6=Sun
     return Container(
       width: double.infinity,
@@ -211,7 +213,7 @@ class _HomePageState extends State<HomePage> {
                   color: Colors.orangeAccent, size: 28),
               const SizedBox(width: 8),
               Text(
-                "${health.currentStreak} Day Streak",
+                "${health.currentStreak} $d Streak",
                 style: const TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
