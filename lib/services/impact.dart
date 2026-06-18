@@ -173,7 +173,7 @@ class Impact{
               })
           .toList();
     }
-    throw Exception("Server error ${response.statusCode} on resting heart rate data");
+    throw Exception("Server error ${response.statusCode} on sleep data");
   }
 
   // 3. HEART RATE GIORNALIERO --> LISTA DI MAPPE CON ALL'INTERNO {"date": "2026-05-20","time": "00:00:02","value": 58.0}
@@ -224,7 +224,7 @@ class Impact{
       }).toList();
     }
     
-    throw Exception("Server error ${response.statusCode} on heart rate intraday data");
+    throw Exception("Server error ${response.statusCode} on $dataType data");
   }
 
   // 6. DAILY EXERCISE, WILL RETURN TIME OF START AND TIME OF END
@@ -281,7 +281,7 @@ class Impact{
             endTimeStr = "$hours:$minutes:$seconds";
           }
         } catch (e) {
-          print("Error parsing exercise time: $e");
+          //print("Error parsing exercise time: $e");
         }
 
         return {

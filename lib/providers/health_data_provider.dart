@@ -11,6 +11,7 @@ class HealthDataProvider extends ChangeNotifier {
   double _baselineRHR = 0.0;
   int _age = 0;
   double _stressLevel = 0.0;
+  double _recoveryLevel = 0.0;
 
   // ── Streak ─────────────────────────────────────────────────────────────────
   int _currentStreak = 0;
@@ -30,6 +31,7 @@ class HealthDataProvider extends ChangeNotifier {
   String? get errorMessage => _errorMessage;
   int get age => _age;
   double get stressLevel => _stressLevel;
+  double get recoveryLevel => _recoveryLevel;
 
   // ─────────────────────────────────────────────────────────────────────────
   // FETCH PRINCIPALE
@@ -64,7 +66,7 @@ class HealthDataProvider extends ChangeNotifier {
 
 
       _computeWeeklyRHR(weeklyRHR);
-      _computeStress(
+      _computeStressAndRecovery(
         recentHeartRate: dailyHR,
         recentSteps: dailySteps,
         recentCalories: dailyCalories,
@@ -125,35 +127,68 @@ class HealthDataProvider extends ChangeNotifier {
   }
 
   // ─────────────────────────────────────────────────────────────────────────
-  // CALCOLO STRESS
+  // CALCOLO STRESS e RECOVERY
   // ─────────────────────────────────────────────────────────────────────────
 
-  Future<void> _computeStress({
+  Future<void> _computeStressAndRecovery({
     required List<Map<String, dynamic>>? recentHeartRate,
     required List<Map<String, dynamic>>? recentSteps,
     required List<Map<String, dynamic>>? recentCalories,
     required List<Map<String, dynamic>>? activeExercises,
     required List<Map<String, dynamic>>? weeklySleep,
   }) async {
-    const double sleepDurationMock = 450.0; //Dati per l'imputazione in caso manchino (7.5 ore in minuti)
-    //const double sleepEfficiencyMock = 85.0;
+    // ── 1. COSTANTI E TEMPO DINAMICO TRASLATO (IERI SU OGGI) ──
+    const double targetSleepDuration = 450.0; // 7.5 ore in minuti
     const double basalCaloriesPerMinute = 1.28;
+    const double maxPointsPerMinute = 1.5; 
+    const double maxDrainPerMinute = 0.35;
+    const double maxMentalElevation = 35.0; // Soglia psicogena emotiva
 
-    const double maxDailyStressPointsCeiling = 18000.0; //Valore da cambiare con test. Se a fine giornata stress è alto allora alzare questo
+    // Allineamento temporale al minuto attuale
+    final now = DateTime.now();
+    int minutesPassedToday = (now.hour * 60) + now.minute;
+    if (minutesPassedToday == 0) minutesPassedToday = 1;
 
+    final String timeLimitStr = "${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}:00";
+
+    // ── 2. PROFILO ANAGRAFICO E BASELINE BIOLOGICA ──
     final sp = await SharedPreferences.getInstance();
-    _age = int.tryParse(sp.getString('user_age') ?? "30") ?? 25;
-    double maxHR = 208 - 0.7 * _age;
+    int age = int.tryParse(sp.getString('user_age') ?? "30") ?? 30;
+    
+    double maxHR = 208.0 - (0.7 * age);
+    double heartRateReserve = maxHR - _baselineRHR;
+    if (heartRateReserve <= 0) heartRateReserve = 100.0; 
 
-    double heartRateReserve = maxHR - _baselineRHR;  
-    if (heartRateReserve <= 0) heartRateReserve = 100.0; //Caso in cui siamo ben sopra il massimo
+    // ── 3. RICARICA NOTTURNA E CARICO ALLOSTATICO SETTIMANALE ──
+    // A. Recovery Iniziale (Initial Battery da Sonno)
+    double actualSleepDuration = targetSleepDuration;
+    if (weeklySleep != null && weeklySleep.isNotEmpty) {
+      final lastNight = weeklySleep.last['data'];
+      if (lastNight != null && lastNight is! List) {
+        double durationMs = (lastNight['duration'] as num? ?? 0).toDouble();
+        if (durationMs > 0) actualSleepDuration = durationMs / 60000;
+      }
+    }
+    double sleepRatio = (actualSleepDuration / targetSleepDuration).clamp(0.0, 1.0);
+    double initialMentalBattery = 50.0 + (sleepRatio * 50.0); // Parte tra 50% e 100%
 
-    // ── 3. ALLINEAMENTO TEMPORALE (RAGGRUPPAMENTO PER MINUTO 'HH:mm') ──
-    // Creiamo dizionari veloci per leggere passi e calorie al volo
+    // B. Stress Settimanale Accumulato (Trend RHR)
+    double weeklyStressPenalty = 0.0;
+    List<double> validWeeklyRHR = _weeklyRHR.whereType<double>().toList();
+    if (validWeeklyRHR.length >= 2 && _baselineRHR > 0) {
+      double latestRHR = validWeeklyRHR.last;
+      if (latestRHR > _baselineRHR + 2.0) {
+        double rhrElevation = latestRHR - _baselineRHR;
+        weeklyStressPenalty = (rhrElevation * 5.0).clamp(0.0, 30.0); 
+      }
+    }
+
+    // ── 4. MAPPE TEMPORALI DI ALLINEAMENTO (FILTRATE FINO AD ORA) ──
     Map<String, double> stepsByMinute = {};
     if (recentSteps != null) {
       for (var s in recentSteps) {
         String timeStr = s['time'] as String? ?? "00:00:00";
+        if (timeStr.compareTo(timeLimitStr) > 0) continue;
         String minuteKey = timeStr.length >= 5 ? timeStr.substring(0, 5) : "00:00";
         stepsByMinute[minuteKey] = (stepsByMinute[minuteKey] ?? 0.0) + (s['value'] as num? ?? 0).toDouble();
       }
@@ -163,41 +198,40 @@ class HealthDataProvider extends ChangeNotifier {
     if (recentCalories != null) {
       for (var c in recentCalories) {
         String timeStr = c['time'] as String? ?? "00:00:00";
+        if (timeStr.compareTo(timeLimitStr) > 0) continue;
         String minuteKey = timeStr.length >= 5 ? timeStr.substring(0, 5) : "00:00";
         caloriesByMinute[minuteKey] = (caloriesByMinute[minuteKey] ?? 0.0) + (c['value'] as num? ?? 0).toDouble();
       }
     }
 
-    // Raggruppiamo i battiti cardiaci per minuto per farne la media
     Map<String, List<double>> hrByMinute = {};
     if (recentHeartRate != null) {
       for (var hr in recentHeartRate) {
         String timeStr = hr['time'] as String? ?? "00:00:00";
+        if (timeStr.compareTo(timeLimitStr) > 0) continue;
         String minuteKey = timeStr.length >= 5 ? timeStr.substring(0, 5) : "00:00";
         double val = (hr['value'] as num? ?? 0).toDouble();
-        
-        if (val > 0) {
-          hrByMinute.putIfAbsent(minuteKey, () => []).add(val);
-        }
+        if (val > 0) hrByMinute.putIfAbsent(minuteKey, () => []).add(val);
       }
     }
 
-    // ── 4. CALCOLO CUMULATIVO SUL "NASTRO TRASPORTATORE" ──
+    // ── 5. ANALISI COERENTE MINUTO PER MINUTO ──
     double cumulativeStressPoints = 0.0;
+    double mentalStressDrain = 0.0;
 
-    // Analizziamo ogni singolo minuto in cui abbiamo un dato del cuore
+    // Calcolo fisso del drenaggio mentale passivo legato alle ore di veglia
+    double basalCognitiveDrain = minutesPassedToday * 0.015;
+
     for (String minuteKey in hrByMinute.keys) {
-      // Media dei battiti in quel minuto (può essere un campione solo o 15, non importa, facciamo la media)
       List<double> hrSamples = hrByMinute[minuteKey]!;
       double avgHr = hrSamples.reduce((a, b) => a + b) / hrSamples.length;
 
-      // Filtro 1: È in allenamento dichiarato?
+      // Filtro 1: Esercizio Fisico Programmato (Non drena la mente, non crea stress ansioso)
       bool isExercising = false;
       if (activeExercises != null) {
         for (var exe in activeExercises) {
           String start = exe['time_start'] as String? ?? "00:00:00";
           String end = exe['time_end'] as String? ?? "00:00:00";
-          // Creiamo una stringa comparabile es: "14:30:00"
           String currentFullTime = "$minuteKey:00"; 
           if (currentFullTime.compareTo(start) >= 0 && currentFullTime.compareTo(end) <= 0) {
             isExercising = true;
@@ -205,80 +239,81 @@ class HealthDataProvider extends ChangeNotifier {
           }
         }
       }
-      if (isExercising) continue; // Salta questo minuto, lo stress è fisico
+      if (isExercising) continue; 
 
-      // Filtro 2: Si sta muovendo?
+      // Filtro 2: Movimento Istantaneo Spontaneo (Passi o picco calorico)
       double stepsInMin = stepsByMinute[minuteKey] ?? 0.0;
       double calsInMin = caloriesByMinute[minuteKey] ?? basalCaloriesPerMinute;
-      
-      // Se fa più di 15 passi o brucia più del triplo del BMR in un minuto, è in movimento
       if (stepsInMin > 15 || calsInMin > (basalCaloriesPerMinute * 3.0)) {
-        continue; // Salta, il battito alto è giustificato
+        continue; 
       }
 
-      // ── LOGICA DI ESTRAZIONE STRESS ──
-      // Se è fermo, ma il cuore batte forte
-      if (avgHr > _baselineRHR) {
+      // ACCUMULO BIOMETRICO: Il soggetto è fermo ma ha il battito accelerato (> baseline + 3)
+      if (avgHr > _baselineRHR + 3.0) {
         double hrElevation = avgHr - _baselineRHR;
+        double intensity = (hrElevation / maxMentalElevation).clamp(0.0, 1.0); 
         
-        // Quanta riserva cardiaca sta usando da seduto? (0.0 a 1.0+)
-        double intensity = hrElevation / heartRateReserve; 
-        
-        // Assegniamo punti. Più l'intensità è alta, più i punti si moltiplicano in modo esponenziale
-        // Se intensity è 0.2 (20%), aggiunge punti. 
-        double pointsPerMinute = (intensity * 100) * 1.5; 
-        cumulativeStressPoints += pointsPerMinute;
+        // Riempimento Secchio Stress
+        cumulativeStressPoints += intensity * maxPointsPerMinute; 
+        // Svuotamento Batteria Recovery
+        mentalStressDrain += intensity * maxDrainPerMinute;
       }
     }
 
-    // ── 5. MAPPING DA PUNTI GREZZI A PERCENTUALE (0-100) ──
-    double rawStressLevel = (cumulativeStressPoints / maxDailyStressPointsCeiling) * 100.0;
+    // ── 6. NORMALIZZAZIONE DEL CARICO GIORNALIERO GENERATO ──
+    double maxPossiblePointsSoFar = minutesPassedToday * maxPointsPerMinute;
+    double rawStressLevel = (cumulativeStressPoints / maxPossiblePointsSoFar) * 100.0;
 
-    // ── 6. L'AMPLIFICATORE (SONNO DELLA NOTTE) ──
-    double avgSleepDuration = sleepDurationMock;
-    if (weeklySleep != null && weeklySleep.isNotEmpty) {
-      // Estraiamo la durata dell'ultima notte disponibile
-      final lastNight = weeklySleep.last['data'];
-      if (lastNight != null && lastNight is! List) {
-        double durationMs = (lastNight['duration'] as num? ?? 0).toDouble();
-        if (durationMs > 0) {
-          avgSleepDuration = durationMs / 60000; // in minuti
-        }
-      }
-    }
-
+    // Integrazione dell'amplificatore del sonno
     double sleepMultiplier = 1.0;
-    double sleepDeficit = sleepDurationMock - avgSleepDuration; // Target 450 min
+    double sleepDeficit = targetSleepDuration - actualSleepDuration; 
     if (sleepDeficit > 0) {
-      // Fino a +35% di penalità se si dorme pochissimo
-      sleepMultiplier += (sleepDeficit / sleepDurationMock) * 0.35; 
+      sleepMultiplier += (sleepDeficit / targetSleepDuration) * 0.35; 
     }
 
-    double finalStress = rawStressLevel * sleepMultiplier;
+    double inheritedStress = (rawStressLevel * sleepMultiplier) + weeklyStressPenalty;
 
-    // ── 7. L'ANTIDOTO (RESPIRAZIONE) ──
+    // ── 7. INTEGRAZIONE ATTIVA DELLA RESPIRAZIONE DI OGGI (L'ANTIDOTO) ──
     final int breathingMinutesToday = await getTodayBreathingMinutes();
     
-    // Ogni minuto di respiro toglie 4 punti percentuali netti dallo stress accumulato
+    // Effetto del respiro sullo Stress (Sconto percentuale diretto)
     double stressReduction = breathingMinutesToday * 4.0; 
-    finalStress -= stressReduction;
+    double finalStress = inheritedStress - stressReduction;
 
-    // Salvataggio finale
+    // Effetto del respiro sulla Recovery (Ricarica Fast-Charge)
+    double rechargeFromBreathing = breathingMinutesToday * 2.5;
+    double finalBattery = initialMentalBattery - basalCognitiveDrain - mentalStressDrain + rechargeFromBreathing;
+
+    // ── 8. SALVATAGGIO DEI COMPONENTI E NOTIFICA UI ──
     _stressLevel = double.parse(finalStress.clamp(0.0, 100.0).toStringAsFixed(1));
+    _recoveryLevel = double.parse(finalBattery.clamp(0.0, 100.0).toStringAsFixed(1));
     
-    // Log per il debug
+    print("=================================================");
+    print("MOTORE DI CALCOLO UNIFICATO MENTALE FINO ALLE $timeLimitStr");
+    print("Minuti di elaborazione giornaliera: $minutesPassedToday min");
+    print("STRESS FINALE REGISTRATO: $_stressLevel%");
+    print("RECOVERY FINALE REGISTRATA: $_recoveryLevel%");
+    print("=================================================");
     print("-------------------------------------------------");
-    print("Calcolo Stress Cumulativo Completato:");
-    print("Baseline RHR: $_baselineRHR | MaxHR: $maxHR");
-    print("Punti Stress Accumulati: ${cumulativeStressPoints.toStringAsFixed(0)}");
-    print("Moltiplicatore Sonno: ${sleepMultiplier.toStringAsFixed(2)}");
-    print("Riduzione Respirazione: -$stressReduction%");
-    print("Stress Finale: $stressLevel%");
+    print("RECOVERY MENTALE: FINO ALLE $timeLimitStr");
+    print("Batteria Iniziale (da Sonno): ${initialMentalBattery.toStringAsFixed(1)}%");
+    print("Drenaggio Cognitivo Base: -${basalCognitiveDrain.toStringAsFixed(1)}%");
+    print("Drenaggio da Ansia/Stress: -${mentalStressDrain.toStringAsFixed(1)}%");
+    print("Ricarica da Respirazione: +${rechargeFromBreathing.toStringAsFixed(1)}%");
+    print("RECOVERY ATTUALE: $_recoveryLevel%");
+    print("-------------------------------------------------");
+    print("-------------------------------------------------");
+    print("STRESS: CALCOLO SPECCHIATO 'IERI-OGGI' FINO ALLE $timeLimitStr:");
+    print("Minuti considerati sul nastro: $minutesPassedToday min");
+    print("Stress Odierno Parziale: ${inheritedStress.toStringAsFixed(1)}%");
+    print("Sconto Respiro di Oggi ($breathingMinutesToday min): -$stressReduction%");
+    print("Moltiplicatore per sonno: $sleepMultiplier");
+    print("Baseline RHR: $_baselineRHR");
+    print("STRESS ATTUALE: $_stressLevel%");
     print("-------------------------------------------------");
 
     notifyListeners();
   }
-
   // ─────────────────────────────────────────────────────────────────────────
   // STREAK
   // ─────────────────────────────────────────────────────────────────────────
