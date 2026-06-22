@@ -141,8 +141,8 @@ class HealthDataProvider extends ChangeNotifier {
     const double targetSleepDuration = 450.0; // 7.5 ore in minuti
     const double basalCaloriesPerMinute = 1.28;
     const double maxPointsPerMinute = 1.5; 
-    const double maxDrainPerMinute = 0.35;
-    const double maxMentalElevation = 35.0; // Soglia psicogena emotiva
+    const double maxDrainPerMinute = 0.12;
+    const double maxMentalElevation = 22.0; // Soglia psicogena emotiva
 
     // Allineamento temporale al minuto attuale
     final now = DateTime.now();
@@ -249,7 +249,7 @@ class HealthDataProvider extends ChangeNotifier {
       }
 
       // ACCUMULO BIOMETRICO: Il soggetto è fermo ma ha il battito accelerato (> baseline + 3)
-      if (avgHr > _baselineRHR + 3.0) {
+      if (avgHr > _baselineRHR + 1.5) {
         double hrElevation = avgHr - _baselineRHR;
         double intensity = (hrElevation / maxMentalElevation).clamp(0.0, 1.0); 
         

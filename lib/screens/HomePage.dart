@@ -94,6 +94,7 @@ class _HomePageState extends State<HomePage> {
         ),
         
         child: SafeArea(
+          bottom: false,
           child: Column(
             children: [
               Expanded(
@@ -758,27 +759,53 @@ class _HomePageState extends State<HomePage> {
 
   Widget _buildBottomNav() {
     return Container(
-      margin: const EdgeInsets.fromLTRB(20, 10, 20, 0),
-      padding: const EdgeInsets.symmetric(vertical: 10),
+      margin: const EdgeInsets.fromLTRB(20, 10, 20, 20), 
+      padding: const EdgeInsets.symmetric(vertical: 7), // Leggermente ridotto per compensare il padding dell'IconButton
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(40),
-        //boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 10)],
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          const Icon(Icons.home, color: Color(0xFF8EAFCE), size: 30),
-          IconButton(
-            icon: const Icon(Icons.air, color: Colors.grey, size: 30),
-            onPressed: () {
-              Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => BreathingSelectionPage()),
-              ).then((_) => _onRefresh()); //This triggers the refresh whenever we go back to homepage after breathing section
-            },
-          ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.2), 
+            blurRadius: 15, 
+            offset: const Offset(0, 5)
+          )
         ],
+      ),
+      // IntrinsicHeight serve per far funzionare bene il VerticalDivider
+      child: IntrinsicHeight(
+        child: Row(
+          children: [
+            Expanded(
+              child: IconButton(
+                icon: const Icon(Icons.home, color: Color(0xFF8EAFCE), size: 30),
+                onPressed: () {
+                  _scrollController.animateTo(0, duration: const Duration(milliseconds: 300), curve: Curves.easeOut);
+                },
+              ),
+            ),
+
+            VerticalDivider(
+              color: Colors.grey.withOpacity(0.4),
+              thickness: 1,
+              width: 1,
+              indent: 5, // Spazio dal top
+              endIndent: 5, // Spazio dal bottom
+            ),
+
+            Expanded(
+              child: IconButton(
+                icon: const Icon(Icons.air, color: Colors.grey, size: 30),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => BreathingSelectionPage()),
+                  ).then((_) => _onRefresh()); 
+                },
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
