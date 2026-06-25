@@ -63,13 +63,13 @@ class UserProvider extends ChangeNotifier {
     if (gender.isEmpty) return "Select a gender";
     
     int? h = int.tryParse(heightString);
-    if (h == null || h <= 0) return "Invalid height";
+    if (h == null || h <= 0 || h > 250) return "Invalid height";
     
     double? w = double.tryParse(weightString.replaceAll(',', '.'));
-    if (w == null || w <= 0) return "Invalid weight";
+    if (w == null || w <= 0 || w > 250) return "Invalid weight";
 
     int? age = int.tryParse(ageString);
-    if (age == null || age <= 0) return "Invalid age";
+    if (age == null || age <= 0 || age > 116) return "Invalid age";
 
     _name = name;
     _height = h;
@@ -132,15 +132,15 @@ class UserProvider extends ChangeNotifier {
       return false; // Il nome non può essere vuoto
     }
     
-    if (parsedHeight == null || parsedHeight <= 0) {
+    if (parsedHeight == null || parsedHeight <= 0 || parsedHeight > 250) {
       return false; // L'altezza deve essere un numero maggiore di 0
     }
     
-    if (parsedWeight == null || parsedWeight <= 0.0) {
+    if (parsedWeight == null || parsedWeight <= 0.0 || parsedWeight > 250) {
       return false; // Il peso deve essere un numero maggiore di 0
     }
 
-    if (parsedAge == null || parsedAge <= 0) {
+    if (parsedAge == null || parsedAge <= 0 || parsedAge > 116) {
       return false; // L'età deve essere un numero maggiore di 0
     }
 

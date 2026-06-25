@@ -151,6 +151,9 @@ class _SettingPageState extends State<SettingPage> {
 
     // Se l'utente ha cliccato "DISCARD", chiudiamo la pagina Settings
     if (shouldExit == true && mounted) {
+      setState(() { 
+        _forcePop = true; // per sbloccare l'uscita
+      });
       Navigator.pop(context); 
     }
   }
@@ -158,16 +161,22 @@ class _SettingPageState extends State<SettingPage> {
   @override
   Widget build(BuildContext context) {
     return PopScope( // popscope per 'bloccare' il tasto indietro
-      canPop: _forcePop || !_hasUnsavedChanges(), //Se _forcePop è vero o se non ci sono modifiche allora può tornare indietro
+      canPop: _forcePop,
       onPopInvokedWithResult: (didPop, result) async {
         if (didPop) return; // Se è già uscito, ignora
 
         if (_hasUnsavedChanges()) {
+          // Il controllo ora viene fatto in tempo reale!
           // Se ci sono modifiche, mostra il popup
           await _showExitWarning();
         } else {
-          // Se non ci sono modifiche, esce normalmente
-          Navigator.pop(context);
+          // Se non ci sono modifiche, sblocchiamo l'uscita
+          setState(() {
+            _forcePop = true; 
+          });
+          WidgetsBinding.instance.addPostFrameCallback((_) { //Dice a flutter di fare questo non appena ha finito cio che sta facendo
+            if (mounted) Navigator.pop(context);
+          });
         }
       },
     
