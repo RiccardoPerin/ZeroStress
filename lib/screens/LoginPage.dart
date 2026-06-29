@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/user_provider.dart';
+import '../services/utils.dart';
 
 class LoginPage extends StatefulWidget {
   LoginPage({Key? key}) : super(key: key);
@@ -38,9 +39,9 @@ class _LoginPageState extends State<LoginPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildLogo(),
+              buildLogo(),
               const SizedBox(height: 60),                  
-              _buildWelcome(),
+              buildMessage('Welcome!', 'Breathe in, breathe out...'),
               const SizedBox(height: 40),             
               _buildUsernameField(),
               const SizedBox(height: 20),
@@ -54,70 +55,6 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  Widget _buildLogo() {
-    return FittedBox(
-      fit: BoxFit.scaleDown,
-      alignment: Alignment.centerLeft,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.start,
-        children: [
-          Image.asset(
-            'assets/logo.png',
-            height: 100,
-          ),
-          const SizedBox(width: 10),
-          Text.rich(
-            TextSpan(
-              children: [
-                const TextSpan(
-                  text: 'Zero',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 50,
-                    color: Color(0xFF384242),
-                  )
-                ),
-
-                const TextSpan(
-                  text: 'Stress',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w200,
-                    fontSize: 50,
-                    color: LoginPage.primaryAzure,
-                  )
-                )
-              ]
-            )
-          ),
-        ],
-      ),
-    );
-  }
-
-
-  Widget _buildWelcome() {
-    return const Column( // Avvolgi tutto in una Column
-      crossAxisAlignment: CrossAxisAlignment.start, // Allinea il testo a sinistra
-      children: [
-        Text(
-          'Welcome!',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 32,
-            color: Color(0xFF384242),
-          ),
-        ),
-        SizedBox(height: 10),
-        Text(
-          'Breathe in, breathe out...',
-          style: TextStyle(
-            color: Colors.grey,
-            fontSize: 16,
-          ),
-        ),
-      ],
-    );
-  }
 
   Widget _buildUsernameField() {
     return TextField(
@@ -191,6 +128,7 @@ class _LoginPageState extends State<LoginPage> {
                   backgroundColor: Colors.redAccent,
                   behavior: SnackBarBehavior.floating,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  duration: Duration(seconds: 2),
                 ),
               ); // Chiusura showSnackBar
             }

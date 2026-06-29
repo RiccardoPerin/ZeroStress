@@ -60,7 +60,7 @@ class _HomePageState extends State<HomePage> {
           content: Text(health.errorMessage!),
           backgroundColor: Colors.red.shade700,
           behavior: SnackBarBehavior.floating,
-          duration: const Duration(seconds: 5),
+          duration: const Duration(seconds: 2),
           action: SnackBarAction(
             label: 'Retry',
             textColor: Colors.white,
@@ -110,22 +110,19 @@ class _HomePageState extends State<HomePage> {
                       builder: (context, health, _) {
                         return Column(
                           children: [
-                            // STREAK & RECAP BOX
                             _buildStreakBox(health),
                             const SizedBox(height: 20),
 
-                            // TODAY STRESS & RECOVERY (Due box affiancati)
                             Row(
                               children: [
-                                Expanded(child: _buildSmallStatCardIncreasingValue("Today's Stress", health.stressLevel)), // ("Today Stress",health.stressLevel)
+                                Expanded(child: _buildRadialCard("Today's Stress", health.stressLevel)),
                                 const SizedBox(width: 15),
-                                Expanded(child: _buildSmallStatCardDecreasingValue("Today's Recovery", health.recoveryLevel))
+                                Expanded(child: _buildRadialCard("Today's Recovery", health.recoveryLevel))
                               ],
                             ),
 
                             const SizedBox(height: 10),
 
-                            // GRAFICO RHR
                             _buildRHRChartCard("Resting HR Trend", health),
                             const SizedBox(height: 10),
 
@@ -138,7 +135,6 @@ class _HomePageState extends State<HomePage> {
                 ),
               ),
               
-              // 4. NAVIGATION BAR (Home e Respiro)
               _buildBottomNav(),
             ],
           ),
@@ -271,21 +267,37 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  //IncreasingValue perchè serve per creare Stress level, per cui il colore 'peggiora' al crescere
-  Widget _buildSmallStatCardIncreasingValue(String title, double valPerc) {
+  Widget _buildRadialCard(String title, double valPerc) {
     Color colorTxt = Colors.greenAccent;
     String txtVal = '';
-    if (valPerc >= 0 && valPerc <= 20) {
-      colorTxt = Colors.greenAccent;
-      txtVal = 'Low';
+    if (title == "Today's Stress") {
+      if (valPerc >= 0 && valPerc <= 20) {
+        colorTxt = Colors.greenAccent;
+        txtVal = 'Low';
+      }
+      else if (valPerc > 20 && valPerc <= 60) {
+        colorTxt = Colors.orangeAccent;
+        txtVal = 'Medium';
+      }
+      else {
+        colorTxt = Colors.redAccent;
+        txtVal = 'High';
+      }
     }
-    else if (valPerc > 20 && valPerc <= 60) {
-      colorTxt = Colors.orangeAccent;
-      txtVal = 'Medium';
-    }
-    else {
-      colorTxt = Colors.redAccent;
-      txtVal = 'High';
+
+    if (title == "Today's Recovery") {
+      if (valPerc >= 0 && valPerc <= 15) {
+        colorTxt = Colors.redAccent;
+        txtVal = 'Low';
+      }
+      else if (valPerc > 15 && valPerc <= 50) {
+        colorTxt = Colors.orangeAccent;
+        txtVal = 'Medium';
+      }
+      else {
+        colorTxt = Colors.greenAccent;
+        txtVal = 'High';
+      }
     }
     return Container(
       padding: const EdgeInsets.all(16),
@@ -338,101 +350,9 @@ class _HomePageState extends State<HomePage> {
                                 width: 0.2,
                                 sizeUnit: GaugeSizeUnit.factor,
                                 color: colorTxt.withOpacity(0.8),
-                              )
-                            ],
-                            annotations: <GaugeAnnotation>[
-                              GaugeAnnotation(
-                                positionFactor: 0,
-                                angle: 90,
-                                widget: Text(
-                                  "${valPerc.toStringAsFixed(0)}%",
-                                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: colorTxt)
-                                )
-                              )
-                            ]
-                          )
-                        ]
-                ),
-            ),
-          ),
-
-          //const SizedBox(height: 5),
-
-          Center(
-            child: Text(txtVal, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: colorTxt.withOpacity(0.8)))
-          ),   
-        ]
-      )
-    );
-  }
-
-  //DecreasingValue perchè serve per creare Recovery level, per cui il colore 'migliora' al crescere
-  Widget _buildSmallStatCardDecreasingValue(String title, double valPerc) {
-    Color colorTxt = Colors.greenAccent;
-    String txtVal = '';
-    if (valPerc >= 0 && valPerc <= 15) {
-      colorTxt = Colors.redAccent;
-      txtVal = 'Low';
-    }
-    else if (valPerc > 15 && valPerc <= 50) {
-      colorTxt = Colors.orangeAccent;
-      txtVal = 'Medium';
-    }
-    else {
-      colorTxt = Colors.greenAccent;
-      txtVal = 'High';
-    }
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.black.withOpacity(0.5)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          )
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title, 
-            style: const TextStyle(
-              fontWeight: FontWeight.w600, 
-              fontSize: 14,
-              color: Color(0xFF384242)
-            )
-          ),
-              
-          const SizedBox(height: 5),
-
-          Center(
-            child: SizedBox(
-                height: 110,
-                child: SfRadialGauge(
-                  axes: <RadialAxis>[ //Serve per avere il cerchio di progresso
-                          RadialAxis(
-                            minimum: 0,
-                            maximum: 100,
-                            showLabels: false,
-                            showTicks: false,
-                            axisLineStyle: AxisLineStyle(
-                              thickness: 0.2,
-                              cornerStyle: CornerStyle.bothCurve,
-                              color: Color.fromARGB(30, 0, 169, 181),
-                              thicknessUnit: GaugeSizeUnit.factor,
-                            ),
-                            pointers: <GaugePointer>[
-                              RangePointer(
-                                value: valPerc,
-                                cornerStyle: CornerStyle.bothCurve,
-                                width: 0.2,
-                                sizeUnit: GaugeSizeUnit.factor,
-                                color: colorTxt.withOpacity(0.8),
+                                enableAnimation: true,
+                                animationDuration: 1200,
+                                animationType: AnimationType.ease,
                               )
                             ],
                             annotations: <GaugeAnnotation>[
@@ -498,7 +418,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildRHRChart(List<double?> weeklyRHR, double baseline) {
-    final double threshold = baseline * 1.2;
+    final primaryColor = Theme.of(context).primaryColor;
 
     // Build day labels: index 0 = yesterday-6, index 6 = yesterday
     final yesterday = DateTime.now().subtract(const Duration(days: 1));
@@ -530,107 +450,161 @@ class _HomePageState extends State<HomePage> {
       );
     }
 
-    final allValues = validSpots.map((s) => s.y).toList()..add(threshold);
+    final allValues = validSpots.map((s) => s.y).toList()..add(baseline);
     final minY =
-        (allValues.reduce((a, b) => a < b ? a : b) - 10).roundToDouble();
+        (allValues.reduce((a, b) => a < b ? a : b) - 5).roundToDouble();
     final maxY =
-        (allValues.reduce((a, b) => a > b ? a : b) + 10).roundToDouble();
+        (allValues.reduce((a, b) => a > b ? a : b) + 5).roundToDouble();
 
     return SizedBox(
-      height: 130,
-      child: LineChart(
-        LineChartData(
-          lineTouchData: LineTouchData(
-            touchTooltipData: LineTouchTooltipData(
-              getTooltipColor: (spot) =>
-                  Theme.of(context).primaryColor.withOpacity(0.8),
-              getTooltipItems: (spots) => spots
-                  .map((s) => LineTooltipItem(
-                        '${s.y.toInt()} BPM',
-                        const TextStyle(
-                            color: Colors.white, fontWeight: FontWeight.bold),
-                      ))
-                  .toList(),
+      height: 140,
+      child: Stack(
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(top: 18.0),
+            child: LineChart(
+              LineChartData(
+                lineTouchData: LineTouchData(
+                  touchTooltipData: LineTouchTooltipData(
+                    getTooltipColor: (spot) => primaryColor.withOpacity(0.9),
+                    getTooltipItems: (spots) => spots.map((s) => LineTooltipItem(
+                      '${s.y.toInt()} BPM',
+                      const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                      )).toList(),
+                  ),
+                  handleBuiltInTouches: true,
+                ),
+
+                extraLinesData: ExtraLinesData(horizontalLines: [
+                  HorizontalLine(
+                    y: baseline,
+                    color: Colors.redAccent.withOpacity(0.8),
+                    strokeWidth: 1.5,
+                    dashArray: [6, 6],
+                    label: HorizontalLineLabel(
+                      show: true,
+                      alignment: Alignment.topRight,
+                      padding: const EdgeInsets.only(right: 5, bottom: 5),
+                      style: TextStyle(
+                          color: Colors.redAccent.withOpacity(0.8),
+                          fontWeight: FontWeight.bold,
+                          fontSize: 10),
+                      labelResolver: (_) => '',
+                    ),
+                  ),
+                ]),
+
+                gridData: const FlGridData(
+                  show: false,
+                  drawHorizontalLine: true,
+                  drawVerticalLine: true,
+                ),
+
+                titlesData: FlTitlesData(
+                  show: true,
+                  rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  bottomTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      reservedSize: 22,
+                      interval: 1,
+                      getTitlesWidget: (value, meta) {
+                        final idx = value.toInt();
+                        if (idx >= 0 && idx < dayLabels.length) {
+                          return SideTitleWidget(
+                            meta: meta,
+                            child: Text(dayLabels[idx],
+                                style: const TextStyle(
+                                    color: Colors.grey, fontSize: 10)),
+                          );
+                        }
+                        return const SizedBox();
+                      },
+                    ),
+                  ),
+                  leftTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      interval: 4, 
+                      reservedSize: 30,
+                      getTitlesWidget: (value, meta) => Text(
+                        value.toInt().toString(),
+                        style: const TextStyle(color: Colors.grey, fontSize: 10),
+                      ),
+                    ),
+                  ),
+                ),
+                borderData: FlBorderData(show: false),
+                minX: 0,
+                maxX: 6,
+                minY: minY,
+                maxY: maxY,
+
+                lineBarsData: [
+                  LineChartBarData(
+                    spots: allSpots,
+                    isCurved: true,
+                    curveSmoothness: 0.35,
+                    color: Theme.of(context).primaryColor,
+                    barWidth: 3.5,
+                    isStrokeCapRound: true,
+                    dotData: FlDotData(
+                      show: true,
+                      getDotPainter: (spot, percent, barData, index) {
+                        return FlDotCirclePainter(
+                          radius: 4.5,
+                          color: primaryColor,
+                          strokeWidth: 2,
+                          strokeColor: Colors.white
+                        );
+                      }
+                    ),
+
+                    belowBarData: BarAreaData(
+                      show: true,
+                      gradient: LinearGradient(
+                        colors: [
+                          primaryColor.withOpacity(0.4),
+                          primaryColor.withOpacity(0.0)
+                        ],
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter
+                      )
+                    )
+                  ),
+                ],
+              ),
             ),
-            handleBuiltInTouches: true,
           ),
-          extraLinesData: ExtraLinesData(horizontalLines: [
-            HorizontalLine(
-              y: threshold,
-              color: Colors.redAccent.withOpacity(0.8),
-              strokeWidth: 2,
-              dashArray: [10, 5],
-              label: HorizontalLineLabel(
-                show: true,
-                alignment: Alignment.topRight,
-                padding: const EdgeInsets.only(right: 5, bottom: 5),
-                style: TextStyle(
+
+          Positioned(
+            top: 0,
+            right: 0,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(width: 8, height: 1.5, color: Colors.redAccent.withOpacity(0.8)),
+                const SizedBox(width: 2),
+                Container(width: 8, height: 1.5, color: Colors.redAccent.withOpacity(0.8)),
+                const SizedBox(width: 6),
+
+                Text(
+                  'Average RHR (${baseline.toStringAsFixed(1)} BPM)',
+                  style: TextStyle(
                     color: Colors.redAccent.withOpacity(0.8),
                     fontWeight: FontWeight.bold,
-                    fontSize: 10),
-                labelResolver: (_) => 'RHR +20%',
-              ),
+                    fontSize: 10
+                  ),
+                )
+              ],
             ),
-          ]),
-          gridData: const FlGridData(
-            show: true,
-            drawHorizontalLine: false,
-            drawVerticalLine: false,
-          ),
-          titlesData: FlTitlesData(
-            show: true,
-            rightTitles:
-                const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-            topTitles:
-                const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-            bottomTitles: AxisTitles(
-              sideTitles: SideTitles(
-                showTitles: true,
-                reservedSize: 22,
-                interval: 1,
-                getTitlesWidget: (value, meta) {
-                  final idx = value.toInt();
-                  if (idx >= 0 && idx < dayLabels.length) {
-                    return SideTitleWidget(
-                      meta: meta,
-                      child: Text(dayLabels[idx],
-                          style: const TextStyle(
-                              color: Colors.grey, fontSize: 10)),
-                    );
-                  }
-                  return const SizedBox();
-                },
-              ),
-            ),
-            leftTitles: AxisTitles(
-              sideTitles: SideTitles(
-                showTitles: true,
-                interval: 10, 
-                reservedSize: 30,
-                getTitlesWidget: (value, meta) => Text(
-                  value.toInt().toString(),
-                  style: const TextStyle(color: Colors.grey, fontSize: 10),
-                ),
-              ),
-            ),
-          ),
-          borderData: FlBorderData(show: false),
-          minX: 0,
-          maxX: 6,
-          minY: minY,
-          maxY: maxY,
-          lineBarsData: [
-            LineChartBarData(
-              spots: allSpots,
-              isCurved: false,
-              color: Theme.of(context).primaryColor,
-              barWidth: 4,
-              isStrokeCapRound: true,
-              dotData: const FlDotData(show: true),
-            ),
-          ],
-        ),
-      ),
+          )
+
+        ]
+      )
+      
+      
     );
   }
 
