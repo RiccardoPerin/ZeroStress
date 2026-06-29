@@ -104,7 +104,7 @@ class _BreathingSelectionPageState extends State<BreathingSelectionPage> {
 
   void _showTechniqueDialog(BuildContext context, BreathingTechnique technique) {
     final provider = Provider.of<UserProvider>(context, listen: false);
-    final totalCtrl = TextEditingController(text: provider.time.toString()); //Time shown at the beginning
+    final totalCtrl = TextEditingController(text: provider.time.toString());
 
     showDialog(
       context: context,
@@ -121,23 +121,25 @@ class _BreathingSelectionPageState extends State<BreathingSelectionPage> {
             ),
             child: Icon(technique.icon, color: technique.accentColor, size: 28),
           ),
-
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                technique.description,
-                style: const TextStyle(fontSize: 16, color: Colors.grey),
-              ),
-              const SizedBox(height: 20),
-              _buildDialogField(
-                controller: totalCtrl,
-                label: 'Total Time (min)',
-                icon: Icons.timer_outlined,
-                color: technique.accentColor,
-              ),
-              const SizedBox(height: 8),
-            ],
+          
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  technique.description,
+                  style: const TextStyle(fontSize: 16, color: Colors.grey),
+                ),
+                const SizedBox(height: 20),
+                _buildDialogField(
+                  controller: totalCtrl,
+                  label: 'Total Time (min)',
+                  icon: Icons.timer_outlined,
+                  color: technique.accentColor,
+                ),
+                const SizedBox(height: 8),
+              ],
+            ),
           ),
           actionsPadding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
           actionsAlignment: MainAxisAlignment.spaceEvenly,
@@ -161,6 +163,7 @@ class _BreathingSelectionPageState extends State<BreathingSelectionPage> {
                       backgroundColor: Colors.redAccent,
                       behavior: SnackBarBehavior.floating,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      duration: Duration(seconds: 2),
                     ),
                   );
                   return;
@@ -199,7 +202,7 @@ class _BreathingSelectionPageState extends State<BreathingSelectionPage> {
     final hold2Ctrl    = TextEditingController(text: _customValues[3].toString());
     final totalCtrl    = TextEditingController(text: _customValues[4].toString());
 
-    final accentColor = const Color.fromARGB(193, 48, 167, 137); // colore custom card COLORE DI TOTAL MIN, SAVE E INTESTAZIOE POP UP
+    final accentColor = const Color.fromARGB(193, 48, 167, 137); 
 
     showDialog(
       context: context,
@@ -225,57 +228,57 @@ class _BreathingSelectionPageState extends State<BreathingSelectionPage> {
               ),
             ],
           ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text(
-                'Choose the duration for each phase',
-                style: TextStyle(fontSize: 14, color: Colors.grey),
-              ),
-              const SizedBox(height: 20),
-              _buildDialogField(
-                controller: inhaleCtrl,
-                label: 'Inhale (sec)',
-                icon: Icons.arrow_upward,
-                color: accentColor,
-              ),
-              const SizedBox(height: 14),
-              _buildDialogField(
-                controller: hold1Ctrl,
-                label: 'Hold (sec)',
-                icon: Icons.pause,
-                color: accentColor,
-              ),
-              const SizedBox(height: 14),
-              _buildDialogField(
-                controller: exhaleCtrl,
-                label: 'Exhale (sec)',
-                icon: Icons.arrow_downward,
-                color: accentColor,
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  'Choose the duration for each phase',
+                  style: TextStyle(fontSize: 14, color: Colors.grey),
                 ),
-              const SizedBox(height: 14),
-              _buildDialogField(
-                controller: hold2Ctrl,
-                label: 'Hold (sec)',
-                icon: Icons.pause,
-                color: accentColor,
-              ),
-              const Divider(height: 28),
-              //_buildTimeInfo(context),
-              const SizedBox(height: 14),
-              _buildDialogField(
-                controller: totalCtrl,
-                label: 'Total Time (min)',
-                icon: Icons.timer_outlined,
-                color: accentColor,
-              ),
-              const SizedBox(height: 8),
-            ],
+                const SizedBox(height: 20),
+                _buildDialogField(
+                  controller: inhaleCtrl,
+                  label: 'Inhale (sec)',
+                  icon: Icons.arrow_upward,
+                  color: accentColor,
+                ),
+                const SizedBox(height: 14),
+                _buildDialogField(
+                  controller: hold1Ctrl,
+                  label: 'Hold (sec)',
+                  icon: Icons.pause,
+                  color: accentColor,
+                ),
+                const SizedBox(height: 14),
+                _buildDialogField(
+                  controller: exhaleCtrl,
+                  label: 'Exhale (sec)',
+                  icon: Icons.arrow_downward,
+                  color: accentColor,
+                ),
+                const SizedBox(height: 14),
+                _buildDialogField(
+                  controller: hold2Ctrl,
+                  label: 'Hold (sec)',
+                  icon: Icons.pause,
+                  color: accentColor,
+                ),
+                const Divider(height: 28),
+                const SizedBox(height: 14),
+                _buildDialogField(
+                  controller: totalCtrl,
+                  label: 'Total Time (min)',
+                  icon: Icons.timer_outlined,
+                  color: accentColor,
+                ),
+                const SizedBox(height: 8),
+              ],
+            ),
           ),
           actionsPadding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
           actionsAlignment: MainAxisAlignment.spaceEvenly,
           actions: [
-            // Tasto CANCEL
             TextButton(
               onPressed: () => Navigator.pop(dialogContext),
               style: TextButton.styleFrom(
@@ -285,7 +288,6 @@ class _BreathingSelectionPageState extends State<BreathingSelectionPage> {
               ),
               child: const Text('Cancel'),
             ),
-            // Tasto SAVE
             ElevatedButton(
               onPressed: () {
                 final inhale = int.tryParse(inhaleCtrl.text.trim()) ?? 0;
@@ -294,8 +296,6 @@ class _BreathingSelectionPageState extends State<BreathingSelectionPage> {
                 final hold2  = int.tryParse(hold2Ctrl.text.trim())  ?? 0;
                 final total  = int.tryParse(totalCtrl.text.trim())  ?? 0;
 
-                // DA FARE PIU MESSAGGI D'ERRORE E CAPIRE COME FARE A SPEZZARE I SECONDI
-                // Validazione: inhale e exhale devono essere > 0
                 if (inhale <= 0 || exhale <= 0) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
@@ -303,6 +303,20 @@ class _BreathingSelectionPageState extends State<BreathingSelectionPage> {
                       backgroundColor: Colors.redAccent,
                       behavior: SnackBarBehavior.floating,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      duration: Duration(seconds: 2),
+                    ),
+                  );
+                  return;
+                }
+
+                if (hold1 < 0 || hold2 < 0) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: const Text('Hold times cannot be negative'),
+                      backgroundColor: Colors.redAccent,
+                      behavior: SnackBarBehavior.floating,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      duration: Duration(seconds: 2),
                     ),
                   );
                   return;
@@ -315,6 +329,7 @@ class _BreathingSelectionPageState extends State<BreathingSelectionPage> {
                       backgroundColor: Colors.redAccent,
                       behavior: SnackBarBehavior.floating,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      duration: Duration(seconds: 2),
                     ),
                   );
                   return;
@@ -344,7 +359,6 @@ class _BreathingSelectionPageState extends State<BreathingSelectionPage> {
                   ),
                 );
               },
-              
               style: ElevatedButton.styleFrom(
                 backgroundColor: accentColor,
                 foregroundColor: Colors.white,
@@ -394,6 +408,7 @@ class _BreathingSelectionPageState extends State<BreathingSelectionPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       extendBodyBehindAppBar: true,
       appBar: _buildAppBar(context),
       body: Container(

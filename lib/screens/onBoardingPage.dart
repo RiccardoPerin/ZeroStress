@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/user_provider.dart';
 import 'LoginPage.dart';
+import '../services/utils.dart';
 
 class OnBoardingPage extends StatefulWidget {
   @override
@@ -34,9 +35,9 @@ class _OnBoardingPageState extends State<OnBoardingPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildLogo(),
+              buildLogo(),
               const SizedBox(height: 60),
-              _buildOnBoardingMessage(),
+              buildMessage('Nice meeting you!', 'Let me know more about you...'),
               const SizedBox(height: 40),
               _buildPersonalFields(),
               const SizedBox(height: 10),
@@ -47,71 +48,6 @@ class _OnBoardingPageState extends State<OnBoardingPage> {
           )
         ),
       )
-    );
-  }
-
-
-  Widget _buildLogo() {
-    return FittedBox(
-      fit: BoxFit.scaleDown,
-      alignment: Alignment.centerLeft,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.start,
-        children: [
-          Image.asset(
-            'assets/logo.png',
-            height: 100,
-          ),
-          const SizedBox(width: 10),
-          Text.rich(
-            TextSpan(
-              children: [
-                const TextSpan(
-                  text: 'Zero',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 50,
-                    color: Color(0xFF384242),
-                  )
-                ),
-
-                const TextSpan(
-                  text: 'Stress',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w200,
-                    fontSize: 50,
-                    color: LoginPage.primaryAzure,
-                  )
-                )
-              ]
-            )
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildOnBoardingMessage() {
-    return const Column( // Avvolgi tutto in una Column
-      crossAxisAlignment: CrossAxisAlignment.start, // Allinea il testo a sinistra
-      children: [
-        Text(
-          'Nice meeting you!',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 32,
-            color: Color(0xFF384242),
-          ),
-        ),
-        SizedBox(height: 10),
-        Text(
-          'Insert some information about you...',
-          style: TextStyle(
-            color: Colors.grey,
-            fontSize: 16,
-          ),
-        ),
-      ],
     );
   }
 
@@ -306,6 +242,7 @@ class _OnBoardingPageState extends State<OnBoardingPage> {
                   backgroundColor: Colors.orangeAccent,
                   behavior: SnackBarBehavior.floating,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  duration: Duration(seconds: 2),
                 ),
               ); // Chiusura showSnackBar
             }
