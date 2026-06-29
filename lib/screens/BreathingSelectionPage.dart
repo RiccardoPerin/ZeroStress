@@ -335,6 +335,19 @@ class _BreathingSelectionPageState extends State<BreathingSelectionPage> {
                   return;
                 }
 
+                if (inhale/60 + hold1/60 + exhale/60 + hold2/60 > total) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: const Text('Check the values again'),
+                      backgroundColor: Colors.redAccent,
+                      behavior: SnackBarBehavior.floating,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      duration: Duration(seconds: 2),
+                    ),
+                  );
+                  return;
+                }
+
                 final newValues = [inhale, hold1, exhale, hold2, total];
                 setState(() => _customValues = newValues);
                 _saveCustomValues(newValues);
