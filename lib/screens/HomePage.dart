@@ -6,7 +6,7 @@ import 'SettingPage.dart';
 import 'package:provider/provider.dart'; 
 import 'package:syncfusion_flutter_gauges/gauges.dart';
 import 'package:fl_chart/fl_chart.dart';
-
+import 'package:flip_card/flip_card.dart'; // Import del pacchetto ufficiale flip_card
 
 class HomePage extends StatefulWidget {
   final String userName; // Riceviamo il nome dal Login
@@ -71,7 +71,6 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-
   @override
   Widget build(BuildContext context) {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
@@ -115,15 +114,34 @@ class _HomePageState extends State<HomePage> {
 
                             Row(
                               children: [
-                                Expanded(child: _buildRadialCard("Today's Stress", health.stressLevel)),
+                                // CARD STRESS with FLIP
+                                Expanded(
+                                  child: _buildFlippableCard(
+                                    front: _buildRadialCard("Today's Stress", health.stressLevel),
+                                    backText: "Calculated by tracking elevated heart rate while physically resting. Sleep deficit and a high weekly RHR increase this value, while daily breathing exercises actively lower it.",
+                                  ),
+                                ),
+
                                 const SizedBox(width: 15),
-                                Expanded(child: _buildRadialCard("Today's Recovery", health.recoveryLevel))
+
+                                // CARD RECOVERY with FLIP
+                                Expanded(
+                                  child: _buildFlippableCard(
+                                    front: _buildRadialCard("Today's Recovery", health.recoveryLevel),
+                                    backText: "Your daily mental battery. It is set each morning based on your sleep, naturally drains as the day passes and during stressful events, and instantly recharges through breathing exercises.",
+                                  ),
+                                )
                               ],
                             ),
 
                             const SizedBox(height: 10),
 
-                            _buildRHRChartCard("Resting HR Trend", health),
+                            // RHR CARD with FLIP
+                            _buildFlippableCard(
+                              front: _buildRHRChartCard("Resting HR Trend", health),
+                              backText: "Tracks your weekly resting heart rate trend against your baseline. Consistently elevated values indicate your body is working harder to recover, usually due to accumulated mental stress, poor sleep, or intense physical training.",
+                            ),
+                            
                             const SizedBox(height: 10),
 
                             _buildDailyGoalCard("Your Daily Goal", userProvider.time.toDouble(), _todayBreathingMinutes.toDouble())
@@ -143,7 +161,6 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-
   String _greeting() {
     final hourNow = DateTime.now().hour;
     if (hourNow >= 5 && hourNow < 13) {
@@ -160,7 +177,6 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  //Deve essere PreferredSizeWidget perchè AppBar è già implementata ma facciamo così per miglior lettura codice
   PreferredSizeWidget _buildAppBar(BuildContext context) {
     String greet = _greeting();
     return AppBar(
@@ -171,7 +187,7 @@ class _HomePageState extends State<HomePage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisAlignment: MainAxisAlignment.start,
                   children: [
-                    Text("Good $greet,", style: TextStyle(color: Colors.white70, fontSize: 20)),
+                    Text("Good $greet,", style: const TextStyle(color: Colors.white70, fontSize: 20)),
                     Text(widget.userName.toUpperCase(), style: const TextStyle(color: Colors.white, fontSize: 30, fontWeight: FontWeight.bold)),
                   ],
                 ),
@@ -267,6 +283,63 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  // UNIVERSAL WIDGET FOR FLIP
+  Widget _buildFlippableCard({required Widget front, required String backText}) {
+    final cardDecoration = BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(20),
+      border: Border.all(color: Colors.black.withOpacity(0.5)),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withOpacity(0.1),
+          blurRadius: 10,
+          offset: const Offset(0, 4),
+        )
+      ],
+    );
+
+    return FlipCard(
+      direction: FlipDirection.HORIZONTAL,
+      fill: Fill.fillBack, // back has same dim as front
+      front: front,
+      back: Container(
+        padding: const EdgeInsets.all(10),
+        decoration: cardDecoration,
+        child: Column(
+          children: [
+            Expanded(
+              child: Center(
+                child: SingleChildScrollView(
+                  child: Text(
+                    backText,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: Color(0xFF384242),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            
+            const SizedBox(height: 5),
+            
+            Center(
+              child: Text(
+                'Tap to close',
+                style: TextStyle(
+                  fontSize: 11,
+                  color: Colors.grey.shade400,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildRadialCard(String title, double valPerc) {
     Color colorTxt = Colors.greenAccent;
     String txtVal = '';
@@ -299,6 +372,7 @@ class _HomePageState extends State<HomePage> {
         txtVal = 'High';
       }
     }
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -331,13 +405,13 @@ class _HomePageState extends State<HomePage> {
             child: SizedBox(
                 height: 110,
                 child: SfRadialGauge(
-                  axes: <RadialAxis>[ //Serve per avere il cerchio di progresso
+                  axes: <RadialAxis>[ 
                           RadialAxis(
                             minimum: 0,
                             maximum: 100,
                             showLabels: false,
                             showTicks: false,
-                            axisLineStyle: AxisLineStyle(
+                            axisLineStyle: const AxisLineStyle(
                               thickness: 0.2,
                               cornerStyle: CornerStyle.bothCurve,
                               color: Color.fromARGB(30, 0, 169, 181),
@@ -374,6 +448,18 @@ class _HomePageState extends State<HomePage> {
           Center(
             child: Text(txtVal, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: colorTxt.withOpacity(0.8)))
           ),  
+
+          const SizedBox(height: 12),
+          Center(
+            child: Text(
+              'Tap to reveal',
+              style: TextStyle(
+                fontSize: 11,
+                color: Colors.grey.shade400,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
         ]
       )
     );
@@ -382,7 +468,7 @@ class _HomePageState extends State<HomePage> {
   Widget _buildRHRChartCard(String title, HealthDataProvider health) {
     return Container(
       width: double.infinity,
-      height: 200,
+      height: 220, 
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white, 
@@ -412,6 +498,19 @@ class _HomePageState extends State<HomePage> {
           Center(
             child: _buildRHRChart(health.weeklyRHR, health.baselineRHR)
           ),
+
+          const SizedBox(height: 10),
+          
+          Center(
+            child: Text(
+              'Tap to reveal',
+              style: TextStyle(
+                fontSize: 11,
+                color: Colors.grey.shade400,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -420,7 +519,6 @@ class _HomePageState extends State<HomePage> {
   Widget _buildRHRChart(List<double?> weeklyRHR, double baseline) {
     final primaryColor = Theme.of(context).primaryColor;
 
-    // Build day labels: index 0 = yesterday-6, index 6 = yesterday
     final yesterday = DateTime.now().subtract(const Duration(days: 1));
     final dayLabels = List.generate(7, (i) {
       final d = yesterday.subtract(Duration(days: 6 - i));
@@ -457,7 +555,7 @@ class _HomePageState extends State<HomePage> {
         (allValues.reduce((a, b) => a > b ? a : b) + 5).roundToDouble();
 
     return SizedBox(
-      height: 140,
+      height: 130, // Ridotto leggermente da 140 a 130 per lasciare spazio alla scritta senza intaccare il layout complessivo
       child: Stack(
         children: [
           Padding(
@@ -600,11 +698,8 @@ class _HomePageState extends State<HomePage> {
               ],
             ),
           )
-
         ]
       )
-      
-      
     );
   }
 
@@ -612,7 +707,7 @@ class _HomePageState extends State<HomePage> {
     bool isOverGoal = timeDone > timeGoal;
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10), // Padding bilanciato
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10), 
       decoration: BoxDecoration(
         color: Colors.white, 
         borderRadius: BorderRadius.circular(20),
@@ -626,13 +721,12 @@ class _HomePageState extends State<HomePage> {
         ],
       ),
       child: Row(
-        // Centra verticalmente tutti i figli della Row (titolo e gauge)
         crossAxisAlignment: CrossAxisAlignment.center, 
         children: [
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min, // Occupa solo lo spazio necessario
+              mainAxisSize: MainAxisSize.min, 
               children: [
                 Text(
                   title,
@@ -684,7 +778,7 @@ class _HomePageState extends State<HomePage> {
                               color: Theme.of(context).colorScheme.primary
                             ),
                           ),
-                          Text(
+                          const Text(
                             "minutes", 
                             style: TextStyle(fontSize: 12, color: Colors.grey),
                           ),
@@ -694,7 +788,7 @@ class _HomePageState extends State<HomePage> {
                   ],
                   pointers: <GaugePointer>[
                     RangePointer(
-                      value: isOverGoal ? timeGoal : timeDone, // Si ferma al massimo
+                      value: isOverGoal ? timeGoal : timeDone, 
                       width: 0.2,
                       sizeUnit: GaugeSizeUnit.factor,
                       color: Theme.of(context).primaryColor,
@@ -704,7 +798,7 @@ class _HomePageState extends State<HomePage> {
                       animationType: AnimationType.ease,
                     ),
 
-                    if (isOverGoal) //Per fare l'overlapping stile Apple
+                    if (isOverGoal) 
                       RangePointer(
                         value: timeDone - timeGoal,
                         width: 0.2,
@@ -714,7 +808,6 @@ class _HomePageState extends State<HomePage> {
                         animationDuration: 4000,
                         gradient: SweepGradient(
                           colors: [
-                            //Theme.of(context).colorScheme.primary.withOpacity(0.5), 
                             Theme.of(context).primaryColor,
                             Colors.purpleAccent
                           ],
@@ -734,7 +827,7 @@ class _HomePageState extends State<HomePage> {
   Widget _buildBottomNav() {
     return Container(
       margin: const EdgeInsets.fromLTRB(20, 10, 20, 20), 
-      padding: const EdgeInsets.symmetric(vertical: 7), // Leggermente ridotto per compensare il padding dell'IconButton
+      padding: const EdgeInsets.symmetric(vertical: 7), 
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(40),
@@ -746,7 +839,6 @@ class _HomePageState extends State<HomePage> {
           )
         ],
       ),
-      // IntrinsicHeight serve per far funzionare bene il VerticalDivider
       child: IntrinsicHeight(
         child: Row(
           children: [
@@ -763,8 +855,8 @@ class _HomePageState extends State<HomePage> {
               color: Colors.grey.withOpacity(0.4),
               thickness: 1,
               width: 1,
-              indent: 5, // Spazio dal top
-              endIndent: 5, // Spazio dal bottom
+              indent: 5, 
+              endIndent: 5, 
             ),
 
             Expanded(
