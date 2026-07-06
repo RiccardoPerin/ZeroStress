@@ -20,6 +20,7 @@ dependencies:
   flutter_local_notifications: 
   timezone:
   flutter_timezone:
+  flip_card: ^0.7.0
 
 dev_dependencies:
   flutter_test:
