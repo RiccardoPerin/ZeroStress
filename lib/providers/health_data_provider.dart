@@ -153,9 +153,9 @@ class HealthDataProvider extends ChangeNotifier {
 
     // ── 2. PROFILO ANAGRAFICO E BASELINE BIOLOGICA ──
     final sp = await SharedPreferences.getInstance();
-    int age = int.tryParse(sp.getString('user_age') ?? "30") ?? 30;
+    int? age = int.tryParse(sp.getString('user_age')!);
     
-    double maxHR = 208.0 - (0.7 * age);
+    double maxHR = 208.0 - (0.7 * age!);
     double heartRateReserve = maxHR - _baselineRHR;
     if (heartRateReserve <= 0) heartRateReserve = 100.0; 
 
