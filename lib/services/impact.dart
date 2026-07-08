@@ -103,9 +103,6 @@ class Impact{
         "/daterange/start_date/$startDate/end_date/$endDate/";
 
     final response = await _authenticatedGet(url);
-    if (response.statusCode == 404){
-      return weeklyMap.entries.map((e) => {'date': e.key, 'value': e.value}).toList();
-    }
     if (response.statusCode == 200) {
       final responseBody = jsonDecode(response.body);
       final rawList = responseBody['data'] as List;
@@ -148,9 +145,6 @@ class Impact{
         "/daterange/start_date/$startDate/end_date/$endDate/";
 
     final response = await _authenticatedGet(url);
-    if (response.statusCode == 404){
-      return sleepMap.entries.map((e) => {'date': e.key, 'value': e.value}).toList();
-    }
     if (response.statusCode == 200) {
       final responseBody = jsonDecode(response.body);
       final rawList = responseBody['data'] as List;
@@ -184,22 +178,18 @@ class Impact{
 
     final url = "${Impact.baseUrl}${Impact.dataUrl}$dataType/patients/${Impact.patient}/day/$formattedDate/";
     final response = await _authenticatedGet(url);
-    if (response.statusCode == 404) return <Map<String, dynamic>>[];
     
     if (response.statusCode == 200) {
       final responseBody = jsonDecode(response.body);
       final rawData = responseBody['data'];
 
-      if (rawData is List) return <Map<String, dynamic>>[]; //Gestisce caso in cui orologio non è stato usato
-
-      if (rawData == null) return <Map<String, dynamic>>[];
+      if (rawData is List || rawData == null) return <Map<String, dynamic>>[]; //Gestisce caso in cui orologio non è stato usato
       
       // Access the inner 'data' map, and then the 'data' list inside it
       final dataContainer = rawData as Map<String, dynamic>;
       if (dataContainer['data'] == null) return <Map<String, dynamic>>[];
       
       final rawMeasurements = dataContainer['data'] as List;
-      //final dateStr = dataContainer['date'] as String; // "2026-05-20" //Capire se serve avere la data
 
       // Transform the list, keeping null values intact
       return rawMeasurements.map<Map<String, dynamic>>((item) {
@@ -217,7 +207,6 @@ class Impact{
         }
 
         return {
-          //'date': dateStr,
           'time': item['time'] as String,
           'value': doubleValue, // This can safely be null
         };
@@ -233,14 +222,12 @@ class Impact{
 
     final url = "${Impact.baseUrl}${Impact.dataUrl}exercise/patients/${Impact.patient}/day/$formattedDate/";
     final response = await _authenticatedGet(url);
-    if (response.statusCode == 404) return [];
     
     if (response.statusCode == 200) {
       final responseBody = jsonDecode(response.body);
       final rawData = responseBody['data'];
 
-      if (rawData is List) return <Map<String, dynamic>>[];
-      if (rawData == null) return <Map<String, dynamic>>[];
+      if (rawData is List || rawData == null) return <Map<String, dynamic>>[];
 
       // Access the inner 'data' map, and then the 'data' list inside it
       final dataContainer = rawData as Map<String, dynamic>;
@@ -281,7 +268,8 @@ class Impact{
             endTimeStr = "$hours:$minutes:$seconds";
           }
         } catch (e) {
-          //print("Error parsing exercise time: $e");
+          // If parsing fails, keep the start time as fallback end time
+          endTimeStr = startTimeStr;
         }
 
         return {
