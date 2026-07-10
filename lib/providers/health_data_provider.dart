@@ -142,7 +142,6 @@ class HealthDataProvider extends ChangeNotifier {
     const double basalCaloriesPerMinute = 1.28;
     const double maxPointsPerMinute = 1.5; 
     const double maxDrainPerMinute = 0.12;
-    const double maxMentalElevation = 22.0; // Soglia psicogena emotiva
 
     // Allineamento temporale al minuto attuale
     final now = DateTime.now();
@@ -158,6 +157,14 @@ class HealthDataProvider extends ChangeNotifier {
     double maxHR = 208.0 - (0.7 * age!);
     double heartRateReserve = maxHR - _baselineRHR;
     if (heartRateReserve <= 0) heartRateReserve = 100.0; 
+
+    // NUOVA COSTANTE: quota di HRR che rappresenta la massima elevazione psicogena "a riposo" plausibile (basata su letteratura su reattività
+    // cardiovascolare da stress acuto, ben al di sotto delle soglie di sforzo fisico ACSM ~30-40% HRR)
+    const double maxMentalElevationHRRFraction = 0.12; // 12% della riserva cardiaca
+
+    // Soglia individualizzata, sostituisce la vecchia costante fissa "22.0"
+    double maxMentalElevation = heartRateReserve * maxMentalElevationHRRFraction;
+
 
     // ── 3. RICARICA NOTTURNA E CARICO ALLOSTATICO SETTIMANALE ──
     // A. Recovery Iniziale (Initial Battery da Sonno)
@@ -179,7 +186,9 @@ class HealthDataProvider extends ChangeNotifier {
       double latestRHR = validWeeklyRHR.last;
       if (latestRHR > _baselineRHR + 2.0) {
         double rhrElevation = latestRHR - _baselineRHR;
-        weeklyStressPenalty = (rhrElevation * 5.0).clamp(0.0, 30.0); 
+
+        double weeklyElevationRatio = (rhrElevation / heartRateReserve).clamp(0.0, 1.0);
+        weeklyStressPenalty = (weeklyElevationRatio * 100.0 * 0.6).clamp(0.0, 30.0);
       }
     }
 
