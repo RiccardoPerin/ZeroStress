@@ -138,7 +138,7 @@ class _HomePageState extends State<HomePage> {
 
                             // RHR CARD with FLIP
                             _buildFlippableCard(
-                              front: _buildRHRChartCard("Resting HR Trend", health),
+                              front: _buildRHRChartCard("Resting Heart Rate Trend", health),
                               backText: "Tracks your weekly resting heart rate trend against your baseline. Consistently elevated values indicate your body is working harder to recover, usually due to accumulated mental stress, poor sleep, or intense physical training.",
                             ),
                             
@@ -314,7 +314,7 @@ class _HomePageState extends State<HomePage> {
                     backText,
                     textAlign: TextAlign.center,
                     style: const TextStyle(
-                      fontSize: 14,
+                      fontSize: 13,
                       color: Color(0xFF384242),
                     ),
                   ),
