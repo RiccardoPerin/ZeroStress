@@ -205,7 +205,6 @@ class Impact{
             doubleValue = double.tryParse(rawValue);
           }
         }
-
         return {
           'time': item['time'] as String,
           'value': doubleValue, // This can safely be null
@@ -239,7 +238,7 @@ class Impact{
       // Transform the list, keeping null values intact
       return rawMeasurements.map<Map<String, dynamic>>((item) {
         final String startTimeStr = item['time'];
-        final double durationMs = item['duration'];
+        final double durationMs = (item['duration'] as num).toDouble();
 
         String endTimeStr = startTimeStr; //In caso di errore allora non lo considera
 
@@ -271,7 +270,6 @@ class Impact{
           // If parsing fails, keep the start time as fallback end time
           endTimeStr = startTimeStr;
         }
-
         return {
           'date': dateStr,
           'time_start': startTimeStr,
