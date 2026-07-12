@@ -51,20 +51,6 @@ class HealthDataProvider extends ChangeNotifier {
       final dailyCalories = await Impact.fetchDailyData("calories", DateTime.now().subtract(const Duration(days: 1)));
       final dailyExercise = await Impact.fetchDailyExcersiseData(DateTime.now().subtract(const Duration(days: 1)));
 
-      print('Weekly RHR:');
-      print(weeklyRHR);
-      print('Weekly Sleep:');
-      print(weeklySleep);
-      print('Daily exercise:');
-      print(dailyExercise);
-      print('Daily steps:');
-      print(dailySteps);
-      print('Daily calories:');
-      print(dailyCalories);
-      print('Daily Heart rate:');
-      print(dailyHR);
-
-
       _computeWeeklyRHR(weeklyRHR);
       _computeStressAndRecovery(
         recentHeartRate: dailyHR,
@@ -161,8 +147,6 @@ class HealthDataProvider extends ChangeNotifier {
     // NUOVA COSTANTE: quota di HRR che rappresenta la massima elevazione psicogena "a riposo" plausibile (basata su letteratura su reattività
     // cardiovascolare da stress acuto, ben al di sotto delle soglie di sforzo fisico ACSM ~30-40% HRR)
     const double maxMentalElevationHRRFraction = 0.12; // 12% della riserva cardiaca
-
-    // Soglia individualizzata, sostituisce la vecchia costante fissa "22.0"
     double maxMentalElevation = heartRateReserve * maxMentalElevationHRRFraction;
 
 
@@ -297,6 +281,7 @@ class HealthDataProvider extends ChangeNotifier {
     _stressLevel = double.parse(finalStress.clamp(0.0, 100.0).toStringAsFixed(1));
     _recoveryLevel = double.parse(finalBattery.clamp(0.0, 100.0).toStringAsFixed(1));
     
+    /*
     print("=================================================");
     print("MOTORE DI CALCOLO UNIFICATO MENTALE FINO ALLE $timeLimitStr");
     print("Minuti di elaborazione giornaliera: $minutesPassedToday min");
@@ -320,6 +305,7 @@ class HealthDataProvider extends ChangeNotifier {
     print("Baseline RHR: $_baselineRHR");
     print("STRESS ATTUALE: $_stressLevel%");
     print("-------------------------------------------------");
+    */
 
     notifyListeners();
   }
